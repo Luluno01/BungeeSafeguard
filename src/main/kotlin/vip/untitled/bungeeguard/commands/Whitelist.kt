@@ -28,7 +28,7 @@ open class Whitelist(val context: ConfigHolderPlugin): Command("whitelist", "bun
                                     assert(uuid != null) { "Both error and UUID are null!" }
                                     synchronized (config) {
                                         if (config.inBlacklist(uuid!!)) {
-                                            sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already   blacklisted, whose priority is higher than whitelist"))
+                                            sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already blacklisted, whose priority is higher than whitelist"))
                                         }
                                         config.addWhitelistRecord(uuid)
                                         sender.sendMessage(TextComponent("${ChatColor.GREEN}${usernameOrUUID} added to whitelist"))
