@@ -13,6 +13,8 @@ open class Whitelist(val context: ConfigHolderPlugin): Command("whitelist", "bun
     open fun sendUsage(sender: CommandSender) {
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /whitelist <add/remove> <player ...>"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Or:"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /whitelist <on/off>"))
     }
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
@@ -32,7 +34,7 @@ open class Whitelist(val context: ConfigHolderPlugin): Command("whitelist", "bun
                                         }
                                         config.addWhitelistRecord(uuid)
                                         sender.sendMessage(TextComponent("${ChatColor.GREEN}${usernameOrUUID} added to whitelist"))
-                                        config.saveConfig()
+                                        config.save()
                                     }
                                 } else {
                                     sender.sendMessage(TextComponent("${ChatColor.RED} failed to whitelist $usernameOrUUID: $err"))
@@ -55,7 +57,7 @@ open class Whitelist(val context: ConfigHolderPlugin): Command("whitelist", "bun
                                         if (config.inWhitelist(uuid!!)) {
                                             config.removeWhitelistRecord(uuid)
                                             sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} removed from whitelist"))
-                                            config.saveConfig()
+                                            config.save()
                                         } else {
                                             sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is not in whitelist"))
                                         }
@@ -69,6 +71,20 @@ open class Whitelist(val context: ConfigHolderPlugin): Command("whitelist", "bun
                         }
                     } else {
                         sendUsage(sender)
+                    }
+                }
+                "on" -> {
+                    synchronized (config) {
+                        config.setWhitelistEnabled(true)
+                        sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ENABLED"))
+                        config.save()
+                    }
+                }
+                "off" -> {
+                    synchronized (config) {
+                        config.setWhitelistEnabled(false)
+                        sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${ChatColor.RED}DISABLED"))
+                        config.save()
                     }
                 }
                 else -> sendUsage(sender)

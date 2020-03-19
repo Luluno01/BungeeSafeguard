@@ -1,14 +1,17 @@
 #########################################
 #       BungeeGuard Configuration       #
-#            Version: 1.0               #
+#            Version: 1.1               #
 #          Author: Untitled             #
 #########################################
 
-version: "1.0"
-message: :( You are not whitelisted on this server
+version: "1.1"
+whitelist-message: :( You are not whitelisted on this server
+blacklist-message: :( We can't let you enter this server
+enable-whitelist: true
 # whitelist:
 # - <whitelisted UUID>
 whitelist:
+enable-blacklist: false
 # blacklist:
 # - <banned UUID>
 blacklist:

@@ -13,6 +13,8 @@ open class Blacklist(val context: ConfigHolderPlugin): Command("blacklist", "bun
     open fun sendUsage(sender: CommandSender) {
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /blacklist <add/remove> <player ...>"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Or:"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /blacklist <on/off>"))
     }
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
@@ -32,7 +34,7 @@ open class Blacklist(val context: ConfigHolderPlugin): Command("blacklist", "bun
                                         }
                                         config.addBlacklistRecord(uuid)
                                         sender.sendMessage(TextComponent("${ChatColor.AQUA}${usernameOrUUID} added to blacklist"))
-                                        config.saveConfig()
+                                        config.save()
                                     }
                                 } else {
                                     sender.sendMessage(TextComponent("${ChatColor.RED} failed to blacklist $usernameOrUUID: $err"))
@@ -55,7 +57,7 @@ open class Blacklist(val context: ConfigHolderPlugin): Command("blacklist", "bun
                                         if (config.inBlacklist(uuid!!)) {
                                             config.removeBlacklistRecord(uuid)
                                             sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} removed from blacklist"))
-                                            config.saveConfig()
+                                            config.save()
                                         } else {
                                             sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is not in blacklist"))
                                         }
@@ -69,6 +71,20 @@ open class Blacklist(val context: ConfigHolderPlugin): Command("blacklist", "bun
                         }
                     } else {
                         sendUsage(sender)
+                    }
+                }
+                "on" -> {
+                    synchronized (config) {
+                        config.setBlacklistEnabled(true)
+                        sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ENABLED"))
+                        config.save()
+                    }
+                }
+                "off" -> {
+                    synchronized (config) {
+                        config.setBlacklistEnabled(false)
+                        sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${ChatColor.RED}DISABLED"))
+                        config.save()
                     }
                 }
                 else -> sendUsage(sender)

@@ -25,6 +25,24 @@ open class BungeeGuard(val context: ConfigHolderPlugin): Command("bungeeguard", 
                     sender.sendMessage(TextComponent("${ChatColor.RED}Failed to reload: $e"))
                 }
             }
+            "status" -> {
+                val config = context.config
+                sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
+                sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
+            }
+            "dump" -> {
+                val config = context.config
+                synchronized (config) {
+                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.whitelist.size} records)"))
+                    for (uuid in config.whitelist) {
+                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
+                    }
+                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.blacklist.size} records)"))
+                    for (uuid in config.blacklist) {
+                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
+                    }
+                }
+            }
             else -> sendUsage(sender)
         }
     }

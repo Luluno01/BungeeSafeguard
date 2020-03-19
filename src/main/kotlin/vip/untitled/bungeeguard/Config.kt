@@ -15,16 +15,38 @@ open class Config(val context: Plugin) {
         const val CONFIG = "config.yml"
         const val WHITELIST = "whitelist"
         const val BLACKLIST = "blacklist"
-        const val MESSAGE = "message"
+        const val WHITELIST_MESSAGE = "whitelist-message"
+        const val BLACKLIST_MESSAGE = "blacklist-message"
+        const val ENABLED_WHITELIST = "enable-whitelist"
+        const val ENABLED_BLACKLIST = "enable-blacklist"
     }
+    @Volatile
     open lateinit var conf: Configuration
-    protected open lateinit var whitelist: MutableSet<UUID>
-    protected open lateinit var blacklist: MutableSet<UUID>
-    open var message: String? = null
+
+    /**
+     * Whitelist (do not access this directly)
+     */
+    @Volatile
+    open lateinit var whitelist: MutableSet<UUID>
+
+    /**
+     * Blacklist (do not access this directly)
+     */
+    @Volatile
+    open lateinit var blacklist: MutableSet<UUID>
+    @Volatile
+    open var whitelistMessage: String? = null
+    @Volatile
+    open var blacklistMessage: String? = null
+    @Volatile
+    open var enableWhitelist = true
+    @Volatile
+    open var enableBlacklist = false
     protected open val dataFolder: File
         get() = context.dataFolder
     protected open val logger: Logger
         get() = context.logger
+
     open fun saveDefaultConfig() {
         if (!dataFolder.exists()) {
             dataFolder.mkdirs()
@@ -48,7 +70,16 @@ open class Config(val context: Plugin) {
         checkWhitelistAndBlacklist(whitelist, blacklist)
         logger.info("${ChatColor.AQUA}${whitelist.size} ${ChatColor.GREEN}whitelist record(s) loaded")
         logger.info("${ChatColor.AQUA}${blacklist.size} ${ChatColor.GREEN}blacklist record(s) loaded")
-        message = if (conf.contains(MESSAGE)) conf.getString(MESSAGE) else null
+        whitelistMessage = if (conf.contains(WHITELIST_MESSAGE)) conf.getString(WHITELIST_MESSAGE) else null
+        blacklistMessage = if (conf.contains(BLACKLIST_MESSAGE)) conf.getString(BLACKLIST_MESSAGE) else null
+        enableWhitelist = if (conf.contains(ENABLED_WHITELIST)) conf.getBoolean(ENABLED_WHITELIST) else true
+        enableBlacklist = if (conf.contains(ENABLED_BLACKLIST)) conf.getBoolean(ENABLED_BLACKLIST) else false
+        logger.info("${ChatColor.GREEN}Whitelist ${if (enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}")
+        logger.info("${ChatColor.GREEN}Blacklist ${if (enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}")
+        if (enableWhitelist == enableBlacklist) {
+            if (enableWhitelist) logger.warning("Both blacklist and whitelist are enabled, blacklist will have a higher priority should a player is in both list")
+            else logger.warning("Both blacklist and whitelist are disabled, BungeeGuard will not block any player")
+        }
     }
 
     open fun loadConfigFromFile(): Configuration {
@@ -56,9 +87,11 @@ open class Config(val context: Plugin) {
     }
 
     @Synchronized
-    open fun saveConfig() {
+    open fun save() {
         conf.set(WHITELIST, whitelist.map { it.toString() }.toTypedArray())
         conf.set(BLACKLIST, blacklist.map { it.toString() }.toTypedArray())
+        conf.set(ENABLED_WHITELIST, enableWhitelist)
+        conf.set(ENABLED_BLACKLIST, enableBlacklist)
         ConfigurationProvider.getProvider(YamlConfiguration::class.java).save(conf, File(dataFolder, CONFIG))
     }
 
@@ -90,6 +123,16 @@ open class Config(val context: Plugin) {
     @Synchronized
     open fun removeBlacklistRecord(record: UUID): Boolean {
         return blacklist.remove(record)
+    }
+
+    @Synchronized
+    open fun setWhitelistEnabled(enabled: Boolean) {
+        enableWhitelist = enabled
+    }
+
+    @Synchronized
+    open fun setBlacklistEnabled(enabled: Boolean) {
+        enableBlacklist = enabled
     }
 
     open fun checkWhitelistAndBlacklist(whitelist: Set<UUID>, blacklist: Set<UUID>) {
