@@ -1,0 +1,14 @@
+#########################################
+#       BungeeGuard Configuration       #
+#            Version: 1.0               #
+#          Author: Untitled             #
+#########################################
+
+version: "1.0"
+message: :( You are not whitelisted on this server
+# whitelist:
+# - <whitelisted UUID>
+whitelist:
+# blacklist:
+# - <banned UUID>
+blacklist:
