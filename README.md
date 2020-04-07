@@ -122,7 +122,7 @@ whitelist lazy-add <space separated usernames or UUIDs>
 Example:
 
 ```
-whitelist add DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
+whitelist lazy-add DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
 ```
 
 #### whitelist remove
@@ -204,7 +204,7 @@ blacklist lazy-add <space separated usernames or UUIDs>
 Example:
 
 ```
-blacklist add DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
+blacklist lazy-add DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
 ```
 
 #### blacklist remove
