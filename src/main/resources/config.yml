@@ -1,6 +1,6 @@
 #########################################
 #       BungeeGuard Configuration       #
-#            Version: 1.1               #
+#            Version: 1.2               #
 #          Author: Untitled             #
 #########################################
 
@@ -8,10 +8,18 @@ version: "1.1"
 whitelist-message: :( You are not whitelisted on this server
 blacklist-message: :( We can't let you enter this server
 enable-whitelist: true
+# lazy-whitelist:
+# - <lazy-whitelisted username, will be translated into UUID and moved to
+#   whitelist>
+lazy-whitelist:
 # whitelist:
 # - <whitelisted UUID>
 whitelist:
 enable-blacklist: false
+# lazy-blacklist:
+# - <lazy-blacklisted username, will be translated into UUID and moved to
+#   blacklist>
+lazy-blacklist:
 # blacklist:
 # - <banned UUID>
 blacklist:

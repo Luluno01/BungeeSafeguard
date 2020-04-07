@@ -16,6 +16,7 @@ open class BungeeGuard(val context: ConfigHolderPlugin): Command("bungeeguard", 
             sendUsage(sender)
             return
         }
+        // This class is an exception that can access `config.*list` directly
         when (args[0]) {
             "reload" -> context.proxy.scheduler.runAsync(context) {
                 try {
@@ -33,11 +34,17 @@ open class BungeeGuard(val context: ConfigHolderPlugin): Command("bungeeguard", 
             "dump" -> {
                 val config = context.config
                 synchronized (config) {
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.whitelist.size} records)"))
+                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyWhitelist.size} lazy record(s), ${config.whitelist.size} UUID record(s))"))
+                    for (username in config.lazyWhitelist) {
+                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
+                    }
                     for (uuid in config.whitelist) {
                         sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
                     }
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.blacklist.size} records)"))
+                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyBlacklist.size} lazy record(s), ${config.blacklist.size} UUID record(s))"))
+                    for (username in config.lazyBlacklist) {
+                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
+                    }
                     for (uuid in config.blacklist) {
                         sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
                     }

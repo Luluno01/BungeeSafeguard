@@ -1,7 +1,6 @@
-package vip.untitled.bungeeguard.commands
+package vip.untitled.bungeeguard.helpers
 
 import net.md_5.bungee.api.plugin.Plugin
-import vip.untitled.bungeeguard.TypedJSON
 import java.io.IOException
 import java.net.URL
 import java.util.*
@@ -41,6 +40,10 @@ object UserUUIDHelper {
             callback(null, UUID.fromString(usernameOrUUID))
             return
         } catch (e: IllegalArgumentException) {}
-        getUUIDFromUsername(context, usernameOrUUID, callback)
+        getUUIDFromUsername(
+            context,
+            usernameOrUUID,
+            callback
+        )
     }
 }

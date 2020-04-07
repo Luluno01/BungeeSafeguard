@@ -21,6 +21,38 @@ open class BungeeGuard: ConfigHolderPlugin() {
 
     override fun onDisable() {
         proxy.pluginManager.unregisterListener(events)
+        logger.info("Saving configuration")
+        try {
+            config.save()
+            logger.info("Configuration saved")
+        } catch (err: Throwable) {
+            logger.severe("Failed to save configuration")
+            err.printStackTrace()
+            logger.warning("======== Start dumping lazy-whitelist for data recovery ========")
+            logger.warning(config.lazyWhitelist.joinToString { '"' + it.replace("\"", "\\\"") + '"' })
+            logger.warning("======== End dumping lazy-whitelist for data recovery ========")
+            logger.warning("======== Start dumping lazy-blacklist for data recovery ========")
+            logger.warning(config.lazyBlacklist.joinToString { '"' + it.replace("\"", "\\\"") + '"' })
+            logger.warning("======== End dumping lazy-blacklist for data recovery ========")
+            logger.warning("======== Start dumping whitelist for data recovery ========")
+            logger.warning(config.whitelist.joinToString())
+            logger.warning("======== End dumping whitelist for data recovery ========")
+            logger.warning("======== Start dumping blacklist for data recovery ========")
+            logger.warning(config.blacklist.joinToString())
+            logger.warning("======== End dumping blacklist for data recovery ========")
+            logger.warning("======== Start dumping whitelist message for data recovery ========")
+            logger.warning(config.whitelistMessage)
+            logger.warning("======== End dumping whitelist message for data recovery ========")
+            logger.warning("======== Start dumping blacklist message for data recovery ========")
+            logger.warning(config.blacklistMessage)
+            logger.warning("======== End dumping blacklist message for data recovery ========")
+            logger.warning("======== Start dumping whitelist enable state for data recovery ========")
+            logger.warning(config.enableWhitelist.toString())
+            logger.warning("======== End dumping whitelist enable state for data recovery ========")
+            logger.warning("======== Start dumping blacklist enable state for data recovery ========")
+            logger.warning(config.enableBlacklist.toString())
+            logger.warning("======== End dumping blacklist enable state for data recovery ========")
+        }
     }
 
     open fun reloadConfig() {

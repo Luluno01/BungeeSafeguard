@@ -21,6 +21,22 @@ open class Events(val context: ConfigHolderPlugin): Listener {
     open fun onPostLogin(event: PostLoginEvent) {
         val player = event.player
         val id = player.uniqueId
+        var shouldSaveConfig = false
+        if (config.moveToWhitelistIfInLazyWhitelist(player.name, id)) {
+            shouldSaveConfig = true
+            context.logger.info("${ChatColor.DARK_GREEN}Move player from lazy-whitelist to whitelist ${ChatColor.AQUA}(${player.name} => ${player.uniqueId})")
+        }
+        if (config.moveToBlacklistIfInLazyBlacklist(player.name, id)) {
+            shouldSaveConfig = true
+            context.logger.info("${ChatColor.DARK_PURPLE}Move player from lazy-blacklist to blacklist ${ChatColor.AQUA}(${player.name} => ${player.uniqueId})")
+        }
+        if (shouldSaveConfig) {
+            context.proxy.scheduler.runAsync(context) {
+                synchronized(config) {
+                    config.save()
+                }
+            }
+        }
         if (enableBlacklist && config.inBlacklist(id)) {
             if (blacklistMessage == null) player.disconnect()
             else player.disconnect(TextComponent(blacklistMessage))
