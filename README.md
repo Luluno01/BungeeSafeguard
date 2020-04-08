@@ -9,7 +9,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326
 - [BungeeSafeguard](#bungeesafeguard)
   - [Features](#features)
   - [Usage](#usage)
-  - [Migrate to v2.0](#migrate-to-v2.0)
+  - [Migrate to v2.0](#migrate-to-v20)
   - [Configuration](#configuration)
   - [Commands](#commands)
     - [Whitelist](#whitelist)
