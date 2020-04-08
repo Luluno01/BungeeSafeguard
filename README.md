@@ -1,12 +1,15 @@
-# BungeeGuard
+# BungeeSafeguard
 
 A blacklist and whitelist BungeeCord plugin with support of UUID look up.
 
+This plugin is formerly named BungeeGuard. In order not to conflict with the existing plugin BungeeGuard, this plugin is renamed to BungeeSafeguard from v2.0.
+
 Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326`.
 
-- [BungeeGuard](#bungeeguard)
+- [BungeeSafeguard](#bungeesafeguard)
   - [Features](#features)
   - [Usage](#usage)
+  - [Migrate to v2.0](#migrate-to-v2.0)
   - [Configuration](#configuration)
   - [Commands](#commands)
     - [Whitelist](#whitelist)
@@ -24,9 +27,9 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326
       - [blacklist on](#blacklist-on)
       - [blacklist off](#blacklist-off)
     - [Main Command](#main-command)
-      - [bungeeguard reload](#bungeeguard-reload)
-      - [bungeeguard status](#bungeeguard-status)
-      - [bungeeguard dump](#bungeeguard-dump)
+      - [bungeesafeguard reload](#bungeesafeguard-reload)
+      - [bungeesafeguard status](#bungeesafeguard-status)
+      - [bungeesafeguard dump](#bungeesafeguard-dump)
   - [Lazy Lists](#lazy-lists)
   - [Important Notes](#important-notes)
 
@@ -40,19 +43,38 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326
 
 Download pre-compiled jar file from [release page](https://github.com/Luluno01/BungeeGuard/releases). Put downloaded jar file under `<path/to/BungeeCord/plugins>`.
 
+## Migrate to v2.0
+
+Breaking changes in v2.0:
+
+* Plugin name (from BungeeGuard to BungeeSafeguard)
+* Internal package name (from `vip.untitled.bungeesafeguard` to `vip.untitled.bungeesafeguard`)
+* Internal class names
+* Main command name (from `bungeesafeguard` to `bungeesafeguard`, from `bg` to `bsg`)
+* Configuration directory (from `plugins/BungeeGuard` to `plugins/BungeeSafeguard`)
+
+To migrate to v2.0 from lower versions, do the following:
+
+1. Remove old plugin jar file
+2. Install new plugin jar file
+3. Rename old `plugins/BungeeGuard` directory to `plugins/BungeeSafeguard`
+4. Update assigned permissions, change `bungeeguard` to `bungeesafeguard` in permission nodes
+
+You are now good to go.
+
 ## Configuration
 
-The configuration file for BungeeGuard is `plugins/BungeeGuard/config.yml`.
+The configuration file for BungeeSafeguard is `plugins/BungeeSafeguard/config.yml`.
 
 ```yaml
 #########################################
-#       BungeeGuard Configuration       #
-#            Version: 1.2               #
+#     BungeeSafeguard Configuration     #
+#            Version: 2.0               #
 #          Author: Untitled             #
 #########################################
 
 # You can safely ignore this
-version: "1.2"
+version: "2.0"
 
 # Message to be sent to player when that player is blocked for not being whitelisted
 whitelist-message: :( You are not whitelisted on this server
@@ -257,30 +279,30 @@ blacklist off
 
 ### Main Command
 
-Alias: `bg`.
+Alias: `bsg`.
 
-#### bungeeguard reload
+#### bungeesafeguard reload
 
-Reload configuration (from file `plugins/BungeeGuard/config.yml`):
+Reload configuration (from file `plugins/BungeeSafeguard/config.yml`):
 
 ```
-bungeeguard reload
+bungeesafeguard reload
 ```
 
-#### bungeeguard status
+#### bungeesafeguard status
 
 Check status of blacklist and whitelist:
 
 ```
-bungeeguard status
+bungeesafeguard status
 ```
 
-#### bungeeguard dump
+#### bungeesafeguard dump
 
 Dump currently loaded blacklist and whitelist:
 
 ```
-bungeeguard dump
+bungeesafeguard dump
 ```
 
 ## Lazy Lists
@@ -293,7 +315,7 @@ In this way, offline servers should be able to use this plugin painlessly.
 
 ## Important Notes
 
-BungeeGuard does asynchronous UUID look up when you execute add/remove on the lists.
-It's recommended to execute those command only in console, and wait patiently for the completion feedback from the command before executing other commands of BungeeGuard.
+BungeeSafeguard does asynchronous UUID look up when you execute add/remove on the lists.
+It's recommended to execute those command only in console, and wait patiently for the completion feedback from the command before executing other commands of BungeeSafeguard.
 
-Offline servers should be able to use this plugin by using lazy lists or supplying BungeeGuard with players' UUIDs rather than their usernames. However, offline servers will still suffering from UUID abuse if they have no authentication plugin installed or have no external authentication mechanism. Offline server owners need to fully understand whitelist and blacklist is **NOT** a prevention of UUID abuse.
+Offline servers should be able to use this plugin by using lazy lists or supplying BungeeSafeguard with players' UUIDs rather than their usernames. However, offline servers will still suffering from UUID abuse if they have no authentication plugin installed or have no external authentication mechanism. Offline server owners need to fully understand whitelist and blacklist is **NOT** a prevention of UUID abuse.

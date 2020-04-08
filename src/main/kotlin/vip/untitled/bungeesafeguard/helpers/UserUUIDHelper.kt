@@ -1,4 +1,4 @@
-package vip.untitled.bungeeguard.helpers
+package vip.untitled.bungeesafeguard.helpers
 
 import net.md_5.bungee.api.plugin.Plugin
 import java.io.IOException

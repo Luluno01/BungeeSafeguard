@@ -1,4 +1,4 @@
-package vip.untitled.bungeeguard
+package vip.untitled.bungeesafeguard
 
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.TextComponent

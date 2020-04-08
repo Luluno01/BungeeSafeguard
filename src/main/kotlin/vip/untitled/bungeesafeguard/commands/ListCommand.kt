@@ -1,10 +1,10 @@
-package vip.untitled.bungeeguard.commands
+package vip.untitled.bungeesafeguard.commands
 
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.plugin.Command
-import vip.untitled.bungeeguard.Config
-import vip.untitled.bungeeguard.ConfigHolderPlugin
-import vip.untitled.bungeeguard.helpers.ConcurrentTasksHelper
+import vip.untitled.bungeesafeguard.Config
+import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import vip.untitled.bungeesafeguard.helpers.ConcurrentTasksHelper
 
 abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permission: String, vararg aliases: String): Command(name, permission, *aliases) {
     companion object {

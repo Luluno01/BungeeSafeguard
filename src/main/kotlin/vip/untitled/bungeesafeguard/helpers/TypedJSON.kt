@@ -1,4 +1,4 @@
-package vip.untitled.bungeeguard.helpers
+package vip.untitled.bungeesafeguard.helpers
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement

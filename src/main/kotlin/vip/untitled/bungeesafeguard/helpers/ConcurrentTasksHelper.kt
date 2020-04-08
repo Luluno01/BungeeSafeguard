@@ -1,4 +1,4 @@
-package vip.untitled.bungeeguard.helpers
+package vip.untitled.bungeesafeguard.helpers
 
 open class ConcurrentTasksHelper(val total: Int) {
     private var _completion = 0

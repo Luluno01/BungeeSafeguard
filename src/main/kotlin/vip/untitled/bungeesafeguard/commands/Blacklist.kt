@@ -1,13 +1,13 @@
-package vip.untitled.bungeeguard.commands
+package vip.untitled.bungeesafeguard.commands
 
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
-import vip.untitled.bungeeguard.ConfigHolderPlugin
-import vip.untitled.bungeeguard.helpers.UserUUIDHelper
+import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import vip.untitled.bungeesafeguard.helpers.UserUUIDHelper
 import java.util.*
 
-open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blacklist", "bungeeguard.blacklist", "blist") {
+open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blacklist", "bungeesafeguard.blacklist", "blist") {
     override fun sendUsage(sender: CommandSender) {
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /blacklist <add/remove/rm> <player ...>"))

@@ -1,4 +1,4 @@
-package vip.untitled.bungeeguard
+package vip.untitled.bungeesafeguard
 
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.plugin.Plugin
@@ -98,7 +98,7 @@ open class Config(val context: Plugin) {
         logger.info("${ChatColor.GREEN}Blacklist ${if (enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}")
         if (enableWhitelist == enableBlacklist) {
             if (enableWhitelist) logger.warning("Both blacklist and whitelist are enabled, blacklist will have a higher priority should a player is in both list")
-            else logger.warning("Both blacklist and whitelist are disabled, BungeeGuard will not block any player")
+            else logger.warning("Both blacklist and whitelist are disabled, BungeeSafeguard will not block any player")
         }
     }
 

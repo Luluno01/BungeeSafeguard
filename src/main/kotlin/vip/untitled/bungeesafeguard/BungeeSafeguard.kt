@@ -1,22 +1,22 @@
-package vip.untitled.bungeeguard
+package vip.untitled.bungeesafeguard
 
 import net.md_5.bungee.api.ChatColor
-import vip.untitled.bungeeguard.commands.Blacklist
-import vip.untitled.bungeeguard.commands.BungeeGuard
-import vip.untitled.bungeeguard.commands.Whitelist
+import vip.untitled.bungeesafeguard.commands.Blacklist
+import vip.untitled.bungeesafeguard.commands.BungeeSafeguard
+import vip.untitled.bungeesafeguard.commands.Whitelist
 
 
-open class BungeeGuard: ConfigHolderPlugin() {
+open class BungeeSafeguard: ConfigHolderPlugin() {
     internal lateinit var events: Events
     override fun onEnable() {
-        logger.info("${ChatColor.GREEN}BungeeGuard enabled")
+        logger.info("${ChatColor.GREEN}BungeeSafeguard enabled")
         events = Events(this)
         proxy.pluginManager.registerListener(this, events)
 
         loadConfig()
         proxy.pluginManager.registerCommand(this, Whitelist(this))
         proxy.pluginManager.registerCommand(this, Blacklist(this))
-        proxy.pluginManager.registerCommand(this, BungeeGuard(this))
+        proxy.pluginManager.registerCommand(this, BungeeSafeguard(this))
     }
 
     override fun onDisable() {
