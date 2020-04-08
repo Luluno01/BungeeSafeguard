@@ -41,7 +41,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326
 
 ## Usage
 
-Download pre-compiled jar file from [release page](https://github.com/Luluno01/BungeeGuard/releases). Put downloaded jar file under `<path/to/BungeeCord/plugins>`.
+Download pre-compiled jar file from [release page](https://github.com/Luluno01/BungeeSafeguard/releases). Put downloaded jar file under `<path/to/BungeeCord/plugins>`.
 
 ## Migrate to v2.0
 
