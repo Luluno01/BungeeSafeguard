@@ -331,4 +331,4 @@ In this way, offline servers should be able to use this plugin painlessly.
 BungeeSafeguard does asynchronous UUID look up when you execute add/remove on the lists.
 It's recommended to execute those command only in console, and wait patiently for the completion feedback from the command before executing other commands of BungeeSafeguard.
 
-Offline servers should be able to use this plugin by using lazy lists or supplying BungeeSafeguard with players' UUIDs rather than their usernames. However, offline servers will still suffering from UUID abuse if they have no authentication plugin installed or have no external authentication mechanism. Offline server owners need to fully understand whitelist and blacklist is **NOT** a prevention of UUID abuse.
+Offline servers should be able to use this plugin by using lazy lists or supplying BungeeSafeguard with players' UUIDs rather than their usernames. However, offline servers are still suffering from UUID abuse if they have no authentication plugin installed or have no external authentication mechanism. Offline server owners need to fully understand whitelist and blacklist is **NOT** a prevention of UUID abuse.
