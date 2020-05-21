@@ -30,6 +30,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326
       - [bungeesafeguard reload](#bungeesafeguard-reload)
       - [bungeesafeguard status](#bungeesafeguard-status)
       - [bungeesafeguard dump](#bungeesafeguard-dump)
+  - [Permission Nodes](#permission-nodes)
   - [Lazy Lists](#lazy-lists)
   - [Important Notes](#important-notes)
 
@@ -304,6 +305,18 @@ Dump currently loaded blacklist and whitelist:
 ```
 bungeesafeguard dump
 ```
+
+## Permission Nodes
+
+BungeeSafeGuard uses BungeeCord's built-in permission system. There are 3 permission nodes for the aforementioned 3 category of commands respectively. Only players granted **with** the permission can issue corresponding command **in game** (this restriction does not apply to console).
+
+| Permission                  | Commands      |
+| --------------------------- | ------------- |
+| `bungeesafeguard.whitelist` | [`whitelist *`](#whitelist) |
+| `bungeesafeguard.blacklist` | [`blacklist *`](#blacklist) |
+| `bungeesafeguard.main`      | [`bungeesafeguard *`](#bungeesafeguard) |
+
+Note that despite that BungeeCord has a built-in permission system, it does not provide a permission manager (or does it?). You will need to install third-party permission plugin so that you can grant permissions to players.
 
 ## Lazy Lists
 
