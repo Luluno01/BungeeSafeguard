@@ -1,10 +1,10 @@
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 2.0               #
+#            Version: 2.1               #
 #          Author: Untitled             #
 #########################################
 
-version: "2.0"
+version: "2.1"
 whitelist-message: :( You are not whitelisted on this server
 blacklist-message: :( We can't let you enter this server
 enable-whitelist: true

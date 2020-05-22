@@ -4,6 +4,7 @@ import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
 import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import vip.untitled.bungeesafeguard.helpers.UserNotFoundException
 import vip.untitled.bungeesafeguard.helpers.UserUUIDHelper
 import java.util.*
 
@@ -27,26 +28,30 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
         for (usernameOrUUID in args) {
             UserUUIDHelper.getUUIDFromString(context, usernameOrUUID) { err, uuid ->
                 try {
-                    if (err == null) {
-                        assert(uuid != null) { "Both error and UUID are null!" }
-                        synchronized(config) {
-                            if (config.inWhitelist(uuid!!)) {
-                                sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already whitelisted, whose priority is lower than blacklist"))
-                            }
-                            if (config.inBlacklist(uuid)) {
-                                sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already blacklisted"))
-                            } else {
-                                config.addBlacklistRecord(uuid)
-                                sender.sendMessage(TextComponent("${ChatColor.AQUA}${usernameOrUUID} added to blacklist"))
-                                synchronized (concurrentTasksHelper) {
-                                    concurrentTasksHelper.shouldSaveConfig = true
+                    when (err) {
+                        null -> {
+                            assert(uuid != null) { "Both error and UUID are null!" }
+                            synchronized(config) {
+                                if (config.inWhitelist(uuid!!)) {
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already whitelisted, whose priority is lower than blacklist"))
+                                }
+                                if (config.inBlacklist(uuid)) {
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already blacklisted"))
+                                } else {
+                                    config.addBlacklistRecord(uuid)
+                                    sender.sendMessage(TextComponent("${ChatColor.AQUA}${usernameOrUUID} added to blacklist"))
+                                    synchronized (concurrentTasksHelper) {
+                                        concurrentTasksHelper.shouldSaveConfig = true
+                                    }
                                 }
                             }
                         }
-                    } else {
-                        sender.sendMessage(TextComponent("${ChatColor.RED} failed to blacklist $usernameOrUUID: $err"))
-                        context.logger.warning("Failed to blacklist $usernameOrUUID:")
-                        err.printStackTrace()
+                        is UserNotFoundException -> sender.sendMessage(TextComponent("${ChatColor.RED}User $usernameOrUUID is not found and therefore cannot be blacklisted"))
+                        else -> {
+                            sender.sendMessage(TextComponent("${ChatColor.RED}Failed to blacklist $usernameOrUUID: $err"))
+                            context.logger.warning("Failed to blacklist $usernameOrUUID:")
+                            err.printStackTrace()
+                        }
                     }
                 } finally {
                     concurrentTasksHelper.notifyCompletion()
@@ -65,21 +70,25 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
         for (usernameOrUUID in args) {
             UserUUIDHelper.getUUIDFromString(context, usernameOrUUID) { err, uuid ->
                 try {
-                    if (err == null) {
-                        assert(uuid != null) { "Both error and UUID are null!" }
-                        synchronized(config) {
-                            if (config.inBlacklist(uuid!!)) {
-                                config.removeBlacklistRecord(uuid)
-                                sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} removed from blacklist"))
-                                concurrentTasksHelper.shouldSaveConfig = true
-                            } else {
-                                sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is not in blacklist"))
+                    when (err) {
+                        null -> {
+                            assert(uuid != null) { "Both error and UUID are null!" }
+                            synchronized (config) {
+                                if (config.inBlacklist(uuid!!)) {
+                                    config.removeBlacklistRecord(uuid)
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} removed from blacklist"))
+                                    concurrentTasksHelper.shouldSaveConfig = true
+                                } else {
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is not in blacklist"))
+                                }
                             }
                         }
-                    } else {
-                        sender.sendMessage(TextComponent("${ChatColor.RED} failed to remove $usernameOrUUID from blacklist: $err"))
-                        context.logger.warning("Failed to remove $usernameOrUUID from blacklist:")
-                        err.printStackTrace()
+                        is UserNotFoundException -> sender.sendMessage(TextComponent("${ChatColor.RED}User $usernameOrUUID is not found and therefore cannot be removed from blacklist"))
+                        else -> {
+                            sender.sendMessage(TextComponent("${ChatColor.RED}Failed to remove $usernameOrUUID from blacklist: $err"))
+                            context.logger.warning("Failed to remove $usernameOrUUID from blacklist:")
+                            err.printStackTrace()
+                        }
                     }
                 } finally {
                     concurrentTasksHelper.notifyCompletion()
