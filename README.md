@@ -2,7 +2,7 @@
 
 A blacklist and whitelist BungeeCord plugin with support of UUID look up.
 
-This plugin is formerly named BungeeGuard. In order not to conflict with the existing plugin BungeeGuard, this plugin is renamed to BungeeSafeguard from v2.0.
+This plugin was formerly named BungeeGuard. In order not to conflict with the existing plugin BungeeGuard, this plugin is renamed to BungeeSafeguard from v2.0.
 
 Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326`.
 
@@ -70,18 +70,21 @@ The configuration file for BungeeSafeguard is `plugins/BungeeSafeguard/config.ym
 ```yaml
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 2.1               #
+#            Version: 2.2               #
 #          Author: Untitled             #
 #########################################
 
 # You can safely ignore this
-version: "2.1"
+version: "2.2"
 
-# Message to be sent to player when that player is blocked for not being whitelisted
+# Message to be sent to the player when that player is blocked for not being whitelisted
 whitelist-message: :( You are not whitelisted on this server
 
-# Message to be sent to player when that player is blocked for being blacklisted
+# Message to be sent to the player when that player is blocked for being blacklisted
 blacklist-message: :( We can't let you enter this server
+
+# Message to be sent to the player when that player is blocked for not having a UUID 
+no-uuid-message: :( Name yourself
 
 # Whether to use whitelist
 enable-whitelist: true
