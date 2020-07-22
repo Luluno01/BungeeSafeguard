@@ -18,7 +18,7 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation 'com.google.code.gson:gson:2.8.6'
-    compileOnly "net.md-5:bungeecord-api:1.15-SNAPSHOT"
+    compileOnly "net.md-5:bungeecord-api:1.16-R0.4-SNAPSHOT"
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 

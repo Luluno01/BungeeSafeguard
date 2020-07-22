@@ -19,6 +19,7 @@ open class Config(val context: Plugin) {
         const val LAZY_BLACKLIST = "lazy-blacklist"
         const val WHITELIST_MESSAGE = "whitelist-message"
         const val BLACKLIST_MESSAGE = "blacklist-message"
+        const val NO_UUID_MESSAGE = "no-uuid-message"
         const val ENABLED_WHITELIST = "enable-whitelist"
         const val ENABLED_BLACKLIST = "enable-blacklist"
     }
@@ -53,6 +54,8 @@ open class Config(val context: Plugin) {
     open var whitelistMessage: String? = null
     @Volatile
     open var blacklistMessage: String? = null
+    @Volatile
+    open var noUUIDMessage: String? = null
     @Volatile
     open var enableWhitelist = true
     @Volatile
@@ -92,6 +95,7 @@ open class Config(val context: Plugin) {
         logger.info("${ChatColor.AQUA}${lazyBlacklist.size} ${ChatColor.GREEN}lazy-blacklist record(s) loaded")
         whitelistMessage = if (conf.contains(WHITELIST_MESSAGE)) conf.getString(WHITELIST_MESSAGE) else null
         blacklistMessage = if (conf.contains(BLACKLIST_MESSAGE)) conf.getString(BLACKLIST_MESSAGE) else null
+        noUUIDMessage = if (conf.contains(NO_UUID_MESSAGE)) conf.getString(NO_UUID_MESSAGE) else null
         enableWhitelist = if (conf.contains(ENABLED_WHITELIST)) conf.getBoolean(ENABLED_WHITELIST) else true
         enableBlacklist = if (conf.contains(ENABLED_BLACKLIST)) conf.getBoolean(ENABLED_BLACKLIST) else false
         logger.info("${ChatColor.GREEN}Whitelist ${if (enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}")

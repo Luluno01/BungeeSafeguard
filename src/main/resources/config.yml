@@ -1,12 +1,13 @@
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 2.1               #
+#            Version: 2.2               #
 #          Author: Untitled             #
 #########################################
 
-version: "2.1"
+version: "2.2"
 whitelist-message: :( You are not whitelisted on this server
 blacklist-message: :( We can't let you enter this server
+no-uuid-message: :( Name yourself
 enable-whitelist: true
 # lazy-whitelist:
 # - <lazy-whitelisted username, will be translated into UUID and moved to
