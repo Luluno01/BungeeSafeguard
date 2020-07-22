@@ -4,7 +4,7 @@ A blacklist and whitelist BungeeCord plugin with support of UUID look up.
 
 This plugin was formerly named BungeeGuard. In order not to conflict with the existing plugin BungeeGuard, this plugin is renamed to BungeeSafeguard from v2.0.
 
-Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.15-SNAPSHOT:87d2873:326`.
+Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e2:366`.
 
 - [BungeeSafeguard](#bungeesafeguard)
   - [Features](#features)
