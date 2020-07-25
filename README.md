@@ -49,7 +49,7 @@ Download pre-compiled jar file from [release page](https://github.com/Luluno01/B
 Breaking changes in v2.0:
 
 * Plugin name (from BungeeGuard to BungeeSafeguard)
-* Internal package name (from `vip.untitled.bungeesafeguard` to `vip.untitled.bungeesafeguard`)
+* Internal package name (from `vip.untitled.bungeeguard` to `vip.untitled.bungeesafeguard`)
 * Internal class names
 * Main command name (from `bungeesafeguard` to `bungeesafeguard`, from `bg` to `bsg`)
 * Configuration directory (from `plugins/BungeeGuard` to `plugins/BungeeSafeguard`)
