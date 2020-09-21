@@ -10,12 +10,15 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e
   - [Features](#features)
   - [Usage](#usage)
   - [Migrate to v2.0](#migrate-to-v20)
+  - [XBOX Live Player Support (Bedrock Edition Support)](#xbox-live-player-support-bedrock-edition-support)
   - [Configuration](#configuration)
   - [Commands](#commands)
     - [Whitelist](#whitelist)
       - [whitelist add](#whitelist-add)
+      - [whitelist x-add](#whitelist-x-add)
       - [whitelist lazy-add](#whitelist-lazy-add)
       - [whitelist remove](#whitelist-remove)
+      - [whitelist x-remove](#whitelist-x-remove)
       - [whitelist lazy-remove](#whitelist-lazy-remove)
       - [whitelist on](#whitelist-on)
       - [whitelist off](#whitelist-off)
@@ -38,6 +41,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e
 
 * First **UUID-based** blacklist and whitelist plugin for BungeeCord
 * Add and remove players by their **username** or UUID (username-change-proof)
+* Add and remove XBOX Live players by their **Gamer Tag** or UUID (Gamertag-change-proof) (from v2.3, see [XBOX Live Player Support](#xbox-live-player-support-bedrock-edition-support) for more details)
 * Lazy translation from username to UUID (from v1.2, **offline server friendly**, see [lazy lists](#lazy-lists) for details)
 
 ## Usage
@@ -63,6 +67,14 @@ To migrate to v2.0 from lower versions, do the following:
 
 You are now good to go.
 
+## XBOX Live Player Support (Bedrock Edition Support)
+
+Since version `v2.3`, BungeeSafeguard now supports automatic conversion from XBOX Live Gamer Tag to Minecraft-compatible UUID following the conversion rule as defined by [Geyser](https://geysermc.org/). This new feature hopefully resolves the issue #5.
+XBOX Live Gamer Tags are now added via the command [`x-add`](#whitelist-x-add) and removed via the command [`x-rm`](#whitelist-x-remove).
+There is no need to implement lazy lists for XBOX Live players because current lazy lists are compatible with XBOX Live players.
+
+Note that you need to specify an [`xbl-web-api`](https://github.com/Prouser123/xbl-web-api) instance (you can either deploy your own or use the public one provided by [`xbl-web-api`](https://xbl-api.prouser123.me/)) by setting its URL as the value of the configuration entry `xbl-web-api` (see section [Configuration](#configuration)).
+
 ## Configuration
 
 The configuration file for BungeeSafeguard is `plugins/BungeeSafeguard/config.yml`.
@@ -70,12 +82,12 @@ The configuration file for BungeeSafeguard is `plugins/BungeeSafeguard/config.ym
 ```yaml
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 2.2               #
+#            Version: 2.3               #
 #          Author: Untitled             #
 #########################################
 
 # You can safely ignore this
-version: "2.2"
+version: "2.3"
 
 # Message to be sent to the player when that player is blocked for not being whitelisted
 whitelist-message: :( You are not whitelisted on this server
@@ -111,6 +123,9 @@ lazy-blacklist:
 # blacklist:
 # - <banned UUID>
 blacklist:
+
+# xbl-web-api: <a deployment of https://github.com/Prouser123/xbl-web-api>
+xbl-web-api: https://xbl-api.prouser123.me
 ```
 
 Note that if you enable both blacklist and whitelist (which is weird, but it is possible to do that), player in both lists will be blocked because blacklist has a higher priority over whitelist.
@@ -133,6 +148,22 @@ Example:
 
 ```
 whitelist add DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
+```
+
+#### whitelist x-add
+
+Alias: `xadd`.
+
+Add XBOX Live player(s) to whitelist:
+
+```
+whitelist x-add <space separated GamerTags or converted UUIDs>
+```
+
+Example:
+
+```
+whitelist x-add DummyPlayer0 DummyPlayer1 00000000-0000-0000-852b-afab3ec1e2ff DummyPlayer2
 ```
 
 #### whitelist lazy-add
@@ -165,6 +196,22 @@ Example:
 
 ```
 whitelist remove DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
+```
+
+#### whitelist x-remove
+
+Alias: `whitelist xremove`, `whitelist x-rm` or `whitelist xrm`.
+
+Remove XBOX Live player(s) from whitelist:
+
+```
+whitelist x-remove <space separated GamerTags or converted UUIDs>
+```
+
+Example:
+
+```
+whitelist x-remove DummyPlayer0 DummyPlayer1 00000000-0000-0000-852b-afab3ec1e2ff DummyPlayer2
 ```
 
 #### whitelist lazy-remove

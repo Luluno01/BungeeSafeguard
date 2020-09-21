@@ -1,13 +1,16 @@
 package vip.untitled.bungeesafeguard.helpers
 
 import net.md_5.bungee.api.plugin.Plugin
+import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import java.io.FileNotFoundException
 import java.io.IOException
+import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 
 object UserUUIDHelper {
-    fun getUUIDFromUsername(context: Plugin, username: String, callback: (Throwable?, UUID?) -> Unit) {
+    private fun getUUIDFromUsername(context: Plugin, username: String, callback: (Throwable?, UUID?) -> Unit) {
         context.proxy.scheduler.runAsync(context) {
             var connection: HttpsURLConnection? = null
             try {
@@ -52,7 +55,7 @@ object UserUUIDHelper {
         }
     }
 
-    fun getUUIDFromString(context: Plugin, usernameOrUUID: String,callback: (Throwable?, UUID?) -> Unit) {
+    fun getUUIDFromString(context: Plugin, usernameOrUUID: String, callback: (Throwable?, UUID?) -> Unit) {
         try {
             callback(null, UUID.fromString(usernameOrUUID))
             return
@@ -60,6 +63,71 @@ object UserUUIDHelper {
         getUUIDFromUsername(
             context,
             usernameOrUUID,
+            callback
+        )
+    }
+
+    fun getUUIDFromXUID(xuid: Long): UUID {
+        return UUID.fromString(
+            "00000000-0000-0000-${xuid.ushr(56).and(0xff).toString(16).padStart(2, '0')}${
+                xuid.ushr(
+                    48
+                ).and(0xff).toString(16).padStart(2, '0')
+            }-${xuid.ushr(32).and(0xff).toString(16).padStart(2, '0')}${
+                xuid.ushr(
+                    24
+                ).and(0xff).toString(16).padStart(2, '0')
+            }${xuid.ushr(16).and(0xff).toString(16).padStart(2, '0')}${
+                xuid.ushr(8).and(
+                    0xff
+                ).toString(16).padStart(2, '0')
+            }${xuid.and(0xff).toString(16).padStart(2, '0')}"
+        )
+    }
+
+    private fun doGetUUIDFromXBOXTag(context: ConfigHolderPlugin, tag: String, callback: (Throwable?, UUID?) -> Unit) {
+        var xblWebAPIUrl = context.config.xblWebAPIUrl ?:
+            error("XBL Web API URL must be specified for XUID look up")
+        if (!xblWebAPIUrl.endsWith('/')) xblWebAPIUrl += '/'
+        context.proxy.scheduler.runAsync(context) {
+            var connection: HttpURLConnection? = null
+            try {
+                connection = URL("${xblWebAPIUrl}xuid/$tag/raw").openConnection() as HttpURLConnection
+                connection.connect()
+                val response = connection.inputStream
+                    .bufferedReader()
+                    .use { it.readText() }
+                when (connection.responseCode) {
+                    200 -> {
+                        callback(
+                            null,
+                            getUUIDFromXUID(response.toLong())
+                        )
+                    }
+                    else -> throw IOException("Unable to handle response with status code ${connection.responseCode}")
+                }
+            } catch (e: FileNotFoundException) {
+                callback(UserNotFoundException("User $tag cannot be found from XBOX Live", e), null)
+            } catch (e: Throwable) {
+                callback(e, null)
+            } finally {
+                try {
+                    // InputStream should have been closed
+                    // Will this really close the connection? (I hope it will be reused)
+                    connection?.disconnect()
+                } catch (err: IOException) {}
+            }
+        }
+    }
+
+    fun getUUIDFromXBOXTag(context: ConfigHolderPlugin, tagOrUUID: String, callback: (Throwable?, UUID?) -> Unit) {
+        try {
+            callback(null, UUID.fromString(tagOrUUID))
+            return
+        } catch (e: IllegalArgumentException) {}
+        doGetUUIDFromXBOXTag(
+            context,
+            tagOrUUID,
             callback
         )
     }

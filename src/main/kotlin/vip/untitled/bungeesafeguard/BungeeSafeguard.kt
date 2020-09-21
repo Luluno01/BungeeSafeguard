@@ -52,6 +52,9 @@ open class BungeeSafeguard: ConfigHolderPlugin() {
             logger.warning("======== Start dumping blacklist enable state for data recovery ========")
             logger.warning(config.enableBlacklist.toString())
             logger.warning("======== End dumping blacklist enable state for data recovery ========")
+            logger.warning("======== Start dumping XBL Web API URL for data recovery ========")
+            logger.warning(config.xblWebAPIUrl)
+            logger.warning("======== End dumping XBL Web API URL for data recovery ========")
         }
     }
 

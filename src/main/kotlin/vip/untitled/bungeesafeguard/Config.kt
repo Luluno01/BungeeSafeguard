@@ -22,6 +22,7 @@ open class Config(val context: Plugin) {
         const val NO_UUID_MESSAGE = "no-uuid-message"
         const val ENABLED_WHITELIST = "enable-whitelist"
         const val ENABLED_BLACKLIST = "enable-blacklist"
+        const val XBL_WEB_API = "xbl-web-api"
     }
     @Volatile
     open lateinit var conf: Configuration
@@ -60,6 +61,8 @@ open class Config(val context: Plugin) {
     open var enableWhitelist = true
     @Volatile
     open var enableBlacklist = false
+    @Volatile
+    open var xblWebAPIUrl: String? = null
     protected open val dataFolder: File
         get() = context.dataFolder
     protected open val logger: Logger
@@ -104,6 +107,7 @@ open class Config(val context: Plugin) {
             if (enableWhitelist) logger.warning("Both blacklist and whitelist are enabled, blacklist will have a higher priority should a player is in both list")
             else logger.warning("Both blacklist and whitelist are disabled, BungeeSafeguard will not block any player")
         }
+        xblWebAPIUrl = if (conf.contains(XBL_WEB_API)) conf.getString(XBL_WEB_API) else null
     }
 
     open fun loadConfigFromFile(): Configuration {

@@ -11,10 +11,9 @@ import java.util.*
 open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blacklist", "bungeesafeguard.blacklist", "blist") {
     override fun sendUsage(sender: CommandSender) {
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /blacklist <add/remove/rm> <player ...>"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Or:"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /blacklist <lazy-add/lazy-remove/lazyadd/ladd/lazyremove/lremove/lrm> <player ...>"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Or:"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For normal Mojang players: /blacklist <add/remove/rm> <player ...>"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For XBOX Live players: /blacklist <x-add/xadd/x-remove/x-remove/x-rm/xrm> <player ...>"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For both Mojang and XBOX players: /blacklist <lazy-add/lazy-remove/lazyadd/ladd/lazyremove/lremove/lrm> <player ...>"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /blacklist <on/off>"))
     }
 
@@ -24,22 +23,36 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
      * @param args Array of UUID(s) or username(s) (can be a mixed array)
      */
     override fun addAsync(sender: CommandSender, args: Array<out String>) {
+        addAsync(sender, args, false)
+    }
+
+    /**
+     * Add UUID(s) converted from XUID(s) or XBOX Gamertag(s) to blacklist asynchronously
+     * @param sender Command sender
+     * @param args Array of UUID(s) or username(s) (can be a mixed array)
+     */
+    override fun xAddAsync(sender: CommandSender, args: Array<out String>) {
+        addAsync(sender, args, true)
+    }
+
+    protected fun addAsync(sender: CommandSender, args: Array<out String>, xbox: Boolean) {
+        var lastSyncError: Throwable? = null
         val concurrentTasksHelper = getConcurrentTasksHelperForConfigSaving(args.size)
         for (usernameOrUUID in args) {
-            UserUUIDHelper.getUUIDFromString(context, usernameOrUUID) { err, uuid ->
+            val onUUID = { err: Throwable?, uuid: UUID? ->
                 try {
                     when (err) {
                         null -> {
                             assert(uuid != null) { "Both error and UUID are null!" }
                             synchronized(config) {
                                 if (config.inWhitelist(uuid!!)) {
-                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already whitelisted, whose priority is lower than blacklist"))
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} ${ChatColor.AQUA}($uuid) ${ChatColor.YELLOW}is already whitelisted, whose priority is lower than blacklist"))
                                 }
                                 if (config.inBlacklist(uuid)) {
-                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is already blacklisted"))
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} ${ChatColor.AQUA}($uuid) ${ChatColor.YELLOW}is already blacklisted"))
                                 } else {
                                     config.addBlacklistRecord(uuid)
-                                    sender.sendMessage(TextComponent("${ChatColor.AQUA}${usernameOrUUID} added to blacklist"))
+                                    sender.sendMessage(TextComponent("${ChatColor.AQUA}${usernameOrUUID} ${ChatColor.YELLOW}($uuid) ${ChatColor.AQUA}added to blacklist"))
                                     synchronized (concurrentTasksHelper) {
                                         concurrentTasksHelper.shouldSaveConfig = true
                                     }
@@ -57,6 +70,18 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
                     concurrentTasksHelper.notifyCompletion()
                 }
             }
+            try {
+                if (xbox) UserUUIDHelper.getUUIDFromXBOXTag(context, usernameOrUUID, onUUID)
+                else UserUUIDHelper.getUUIDFromString(context, usernameOrUUID, onUUID)
+            } catch (e: Throwable) {
+                lastSyncError = e
+                concurrentTasksHelper.notifyCompletion()
+            }
+        }
+        if (lastSyncError != null) {
+            sender.sendMessage(TextComponent("${ChatColor.YELLOW}Some error occurred, check the console for more details"))
+            context.logger.warning("Last error:")
+            lastSyncError.printStackTrace()
         }
     }
 
@@ -66,9 +91,23 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
      * @param args Array of UUID(s) or username(s) (can be a mixed array)
      */
     override fun removeAsync(sender: CommandSender, args: Array<out String>) {
+        removeAsync(sender, args, false)
+    }
+
+    /**
+     * Remove UUID(s) converted from XUID(s) or XBOX Gamertag(s) from blacklist asynchronously
+     * @param sender Command sender
+     * @param args Array of UUID(s) converted from XUID(s) or XBOX Gamertag(s) (can be a mixed array)
+     */
+    override fun xRemoveAsync(sender: CommandSender, args: Array<out String>) {
+        removeAsync(sender, args, true)
+    }
+
+    protected fun removeAsync(sender: CommandSender, args: Array<out String>, xbox: Boolean) {
+        var lastSyncError: Throwable? = null
         val concurrentTasksHelper = getConcurrentTasksHelperForConfigSaving(args.size)
         for (usernameOrUUID in args) {
-            UserUUIDHelper.getUUIDFromString(context, usernameOrUUID) { err, uuid ->
+            val onUUID = { err: Throwable?, uuid: UUID? ->
                 try {
                     when (err) {
                         null -> {
@@ -76,10 +115,10 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
                             synchronized (config) {
                                 if (config.inBlacklist(uuid!!)) {
                                     config.removeBlacklistRecord(uuid)
-                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} removed from blacklist"))
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} ${ChatColor.AQUA}($uuid) ${ChatColor.YELLOW}removed from blacklist"))
                                     concurrentTasksHelper.shouldSaveConfig = true
                                 } else {
-                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} is not in blacklist"))
+                                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} ${ChatColor.AQUA}($uuid) ${ChatColor.YELLOW}is not in blacklist"))
                                 }
                             }
                         }
@@ -94,6 +133,18 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
                     concurrentTasksHelper.notifyCompletion()
                 }
             }
+            try {
+                if (xbox) UserUUIDHelper.getUUIDFromXBOXTag(context, usernameOrUUID, onUUID)
+                else UserUUIDHelper.getUUIDFromString(context, usernameOrUUID, onUUID)
+            } catch (e: Throwable) {
+                lastSyncError = e
+                concurrentTasksHelper.notifyCompletion()
+            }
+        }
+        if (lastSyncError != null) {
+            sender.sendMessage(TextComponent("${ChatColor.YELLOW}Some error occurred, check the console for more details"))
+            context.logger.warning("Last error:")
+            lastSyncError.printStackTrace()
         }
     }
 

@@ -29,6 +29,13 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
     abstract fun addAsync(sender: CommandSender, args: Array<out String>)
 
     /**
+     * Add UUID(s) converted from XUID(s) or XBOX Gamertag(s) to the list asynchronously
+     * @param sender Command sender
+     * @param args Array of UUID(s) or username(s) (can be a mixed array)
+     */
+    abstract fun xAddAsync(sender: CommandSender, args: Array<out String>)
+
+    /**
      * Lazy-add UUID(s) or username(s) to the list synchronously
      * @param sender Command sender
      * @param args Array of UUID(s) or username(s) (can be a mixed array)
@@ -41,6 +48,13 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
      * @param args Array of UUID(s) or username(s) (can be a mixed array)
      */
     abstract fun removeAsync(sender: CommandSender, args: Array<out String>)
+
+    /**
+     * Remove UUID(s) converted from XUID(s) or XBOX Gamertag(s) from the list asynchronously
+     * @param sender Command sender
+     * @param args Array of UUID(s) converted from XUID(s) or XBOX Gamertag(s) (can be a mixed array)
+     */
+    abstract fun xRemoveAsync(sender: CommandSender, args: Array<out String>)
 
     /**
      * Lazy-remove UUID(s) or username(s) from the list synchronously
@@ -85,6 +99,13 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
                         sendUsage(sender)
                     }
                 }
+                "x-add", "xadd" -> {
+                    if (args.size > 1) {
+                        xAddAsync(sender, args.copyOfRange(1, args.size))
+                    } else {
+                        sendUsage(sender)
+                    }
+                }
                 "lazy-add", "lazyadd", "ladd" -> {
                     if (args.size > 1) {
                         lazyAdd(sender, args.copyOfRange(1, args.size))
@@ -95,6 +116,14 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
                 "rm", "remove" -> {
                     if (args.size > 1) {
                         removeAsync(sender, args.copyOfRange(1, args.size))
+                    } else {
+                        sendUsage(sender)
+                    }
+                }
+                "x-rm", "xrm",
+                "x-remove", "xremove" -> {
+                    if (args.size > 1) {
+                        xRemoveAsync(sender, args.copyOfRange(1, args.size))
                     } else {
                         sendUsage(sender)
                     }
