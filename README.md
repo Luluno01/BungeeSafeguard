@@ -24,8 +24,10 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e
       - [whitelist off](#whitelist-off)
     - [Blacklist](#blacklist)
       - [blacklist add](#blacklist-add)
+      - [blacklist x-add](#blacklist-x-add)
       - [blacklist lazy-add](#blacklist-lazy-add)
       - [blacklist remove](#blacklist-remove)
+      - [blacklist x-remove](#blacklist-x-remove)
       - [blacklist lazy-remove](#blacklist-lazy-remove)
       - [blacklist on](#blacklist-on)
       - [blacklist off](#blacklist-off)
@@ -264,6 +266,22 @@ Example:
 blacklist add DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
 ```
 
+#### blacklist x-add
+
+Alias: `blacklist xadd`.
+
+Add XBOX Live player(s) to blacklist:
+
+```
+blacklist x-add <space separated usernames or UUIDs>
+```
+
+Example:
+
+```
+blacklist x-add DummyPlayer0 DummyPlayer1 00000000-0000-0000-852b-afab3ec1e2ff DummyPlayer2
+```
+
 #### blacklist lazy-add
 
 Alias: `blacklist lazyadd` or `blacklist ladd`.
@@ -294,6 +312,22 @@ Example:
 
 ```
 blacklist remove DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
+```
+
+#### blacklist x-remove
+
+Alias: `blacklist xremove`, `blacklist x-rm`, `blacklist xrm`.
+
+Remove XBOX Live player(s) from blacklist:
+
+```
+blacklist x-remove <space separated usernames or UUIDs>
+```
+
+Example:
+
+```
+blacklist x-remove DummyPlayer0 DummyPlayer1 00000000-0000-0000-852b-afab3ec1e2ff DummyPlayer2
 ```
 
 #### blacklist lazy-remove
