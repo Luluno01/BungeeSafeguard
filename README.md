@@ -273,7 +273,7 @@ Alias: `blacklist xadd`.
 Add XBOX Live player(s) to blacklist:
 
 ```
-blacklist x-add <space separated usernames or UUIDs>
+blacklist x-add <space separated GamerTags or converted UUIDs>
 ```
 
 Example:
@@ -321,7 +321,7 @@ Alias: `blacklist xremove`, `blacklist x-rm`, `blacklist xrm`.
 Remove XBOX Live player(s) from blacklist:
 
 ```
-blacklist x-remove <space separated usernames or UUIDs>
+blacklist x-remove <space separated GamerTags or converted UUIDs>
 ```
 
 Example:
