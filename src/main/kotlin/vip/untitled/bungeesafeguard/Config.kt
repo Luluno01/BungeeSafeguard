@@ -1,18 +1,21 @@
 package vip.untitled.bungeesafeguard
 
 import net.md_5.bungee.api.ChatColor
+import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.config.Configuration
 import net.md_5.bungee.config.ConfigurationProvider
 import net.md_5.bungee.config.YamlConfiguration
+import vip.untitled.bungeesafeguard.helpers.RedirectedLogger
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import java.util.*
-import java.util.logging.Logger
 
 open class Config(val context: Plugin) {
     companion object {
-        const val CONFIG = "config.yml"
+        const val CONFIG_IN_USE = "config-in-use.txt"
+        const val DEFAULT_CONFIG = "config.yml"
         const val WHITELIST = "whitelist"
         const val LAZY_WHITELIST = "lazy-whitelist"
         const val BLACKLIST = "blacklist"
@@ -23,33 +26,41 @@ open class Config(val context: Plugin) {
         const val ENABLED_WHITELIST = "enable-whitelist"
         const val ENABLED_BLACKLIST = "enable-blacklist"
         const val XBL_WEB_API = "xbl-web-api"
+        const val CONFIRM = "confirm"
     }
+
+    /**
+     * Name of the config file we are currently using (by default we use "config.yml")
+     */
     @Volatile
-    open lateinit var conf: Configuration
+    internal open var configInUse: String = DEFAULT_CONFIG
+
+    @Volatile
+    internal open lateinit var conf: Configuration
 
     /**
      * Whitelist (do not access this directly)
      */
     @Volatile
-    open lateinit var whitelist: MutableSet<UUID>
+    internal open lateinit var whitelist: MutableSet<UUID>
 
     /**
      * Lazy-whitelist (do not access this directly)
      */
     @Volatile
-    open lateinit var lazyWhitelist: MutableSet<String>
+    internal open lateinit var lazyWhitelist: MutableSet<String>
 
     /**
      * Blacklist (do not access this directly)
      */
     @Volatile
-    open lateinit var blacklist: MutableSet<UUID>
+    internal open lateinit var blacklist: MutableSet<UUID>
 
     /**
      * Lazy-blacklist (do not access this directly)
      */
     @Volatile
-    open lateinit var lazyBlacklist: MutableSet<String>
+    internal open lateinit var lazyBlacklist: MutableSet<String>
 
     @Volatile
     open var whitelistMessage: String? = null
@@ -63,35 +74,38 @@ open class Config(val context: Plugin) {
     open var enableBlacklist = false
     @Volatile
     open var xblWebAPIUrl: String? = null
+    @Volatile
+    open var confirm: Boolean = false
     protected open val dataFolder: File
         get() = context.dataFolder
-    protected open val logger: Logger
-        get() = context.logger
 
     open fun saveDefaultConfig() {
         if (!dataFolder.exists()) {
             dataFolder.mkdirs()
         }
-        val conf = File(dataFolder, CONFIG)
+        val conf = File(dataFolder, DEFAULT_CONFIG)
         if (!conf.exists()) {
-            context.getResourceAsStream(CONFIG).use { `in` -> Files.copy(`in`, File(dataFolder, CONFIG).toPath()) }
+            context.getResourceAsStream(DEFAULT_CONFIG).use { `in` -> Files.copy(`in`, File(dataFolder, DEFAULT_CONFIG).toPath()) }
         }
     }
 
-    open fun reload() {
-        load()
+    open fun reload(sender: CommandSender?, configName: String? = null) {
+        load(sender, configName)
     }
 
     @Synchronized
-    open fun load() {
+    open fun load(sender: CommandSender?, configName: String? = null) {
         saveDefaultConfig()
-        conf = loadConfigFromFile()
+        configInUse = configName ?: loadConfigInUse(sender)
+        val logger = RedirectedLogger.get(context, sender)
+        logger.info("Using config file ${ChatColor.AQUA}$configInUse")
+        conf = loadConfigFromFile(configInUse)
         whitelist = extractWhitelist(conf)
         lazyWhitelist = extractLazyWhitelist(conf)
         blacklist = extractBlacklist(conf)
         lazyBlacklist = extractLazyBlacklist(conf)
-        checkWhitelistAndBlacklist(whitelist, blacklist)
-        checkLazyWhitelistAndLazyBlacklist(lazyWhitelist, lazyBlacklist)
+        checkWhitelistAndBlacklist(sender, whitelist, blacklist)
+        checkLazyWhitelistAndLazyBlacklist(sender, lazyWhitelist, lazyBlacklist)
         logger.info("${ChatColor.AQUA}${whitelist.size} ${ChatColor.GREEN}whitelist record(s) loaded")
         logger.info("${ChatColor.AQUA}${lazyWhitelist.size} ${ChatColor.GREEN}lazy-whitelist record(s) loaded")
         logger.info("${ChatColor.AQUA}${blacklist.size} ${ChatColor.GREEN}blacklist record(s) loaded")
@@ -104,14 +118,41 @@ open class Config(val context: Plugin) {
         logger.info("${ChatColor.GREEN}Whitelist ${if (enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}")
         logger.info("${ChatColor.GREEN}Blacklist ${if (enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}")
         if (enableWhitelist == enableBlacklist) {
-            if (enableWhitelist) logger.warning("Both blacklist and whitelist are enabled, blacklist will have a higher priority should a player is in both list")
+            if (enableWhitelist) logger.warning("Both blacklist and whitelist are enabled, blacklist will have a higher priority should a player is in both lists")
             else logger.warning("Both blacklist and whitelist are disabled, BungeeSafeguard will not block any player")
         }
         xblWebAPIUrl = if (conf.contains(XBL_WEB_API)) conf.getString(XBL_WEB_API) else null
+        confirm = if (conf.contains(CONFIRM)) conf.getBoolean(CONFIRM) else false
     }
 
-    open fun loadConfigFromFile(): Configuration {
-        return ConfigurationProvider.getProvider(YamlConfiguration::class.java).load(File(dataFolder, CONFIG))
+    /**
+     * Load the name of the config in use
+     */
+    open fun loadConfigInUse(sender: CommandSender?): String {
+        val logger = RedirectedLogger.get(context, sender)
+        val inUseFile = File(dataFolder, CONFIG_IN_USE)
+        return if (inUseFile.exists() && inUseFile.isFile) {
+            try {
+                val name = inUseFile.readText().trim()
+                val confFile = File(dataFolder, name)
+                if (confFile.exists() && confFile.isFile) {
+                    name
+                } else {
+                    logger.warning("Specified file \"$name\" does not exist, fallback to the default config \"$DEFAULT_CONFIG\"")
+                    DEFAULT_CONFIG
+                }
+            } catch (err: IOException) {
+                logger.warning("Cannot read \"$CONFIG_IN_USE\", fallback to the default config \"$DEFAULT_CONFIG\"")
+                DEFAULT_CONFIG
+            }
+        } else {
+            logger.warning("File \"$CONFIG_IN_USE\" not found, fallback to the default config \"$DEFAULT_CONFIG\"")
+            DEFAULT_CONFIG
+        }
+    }
+
+    open fun loadConfigFromFile(configName: String = DEFAULT_CONFIG): Configuration {
+        return ConfigurationProvider.getProvider(YamlConfiguration::class.java).load(File(dataFolder, configName))
     }
 
     @Synchronized
@@ -122,7 +163,7 @@ open class Config(val context: Plugin) {
         conf.set(LAZY_BLACKLIST, lazyBlacklist.toTypedArray())
         conf.set(ENABLED_WHITELIST, enableWhitelist)
         conf.set(ENABLED_BLACKLIST, enableBlacklist)
-        ConfigurationProvider.getProvider(YamlConfiguration::class.java).save(conf, File(dataFolder, CONFIG))
+        ConfigurationProvider.getProvider(YamlConfiguration::class.java).save(conf, File(dataFolder, configInUse))
     }
 
     @Synchronized
@@ -229,7 +270,8 @@ open class Config(val context: Plugin) {
         enableBlacklist = enabled
     }
 
-    open fun checkWhitelistAndBlacklist(whitelist: Set<UUID>, blacklist: Set<UUID>) {
+    open fun checkWhitelistAndBlacklist(sender: CommandSender?, whitelist: Set<UUID>, blacklist: Set<UUID>) {
+        val logger = RedirectedLogger.get(context, sender)
         val both = whitelist.intersect(blacklist)
         if (both.isNotEmpty()) {
             logger.warning("The following UUID(s) present(s) in both whitelist and blacklist:")
@@ -240,7 +282,8 @@ open class Config(val context: Plugin) {
         }
     }
 
-    open fun checkLazyWhitelistAndLazyBlacklist(lazyWhitelist: Set<String>, lazyBlacklist: Set<String>) {
+    open fun checkLazyWhitelistAndLazyBlacklist(sender: CommandSender?, lazyWhitelist: Set<String>, lazyBlacklist: Set<String>) {
+        val logger = RedirectedLogger.get(context, sender)
         val both = lazyWhitelist.intersect(lazyBlacklist)
         if (both.isNotEmpty()) {
             logger.warning("The following username(s) present(s) in both lazy-whitelist and lazy-blacklist:")

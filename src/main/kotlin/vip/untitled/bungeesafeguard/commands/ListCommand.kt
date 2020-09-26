@@ -1,16 +1,20 @@
 package vip.untitled.bungeesafeguard.commands
 
+import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
-import net.md_5.bungee.api.plugin.Command
+import net.md_5.bungee.api.chat.TextComponent
 import vip.untitled.bungeesafeguard.Config
 import vip.untitled.bungeesafeguard.ConfigHolderPlugin
 import vip.untitled.bungeesafeguard.helpers.ConcurrentTasksHelper
+import vip.untitled.bungeesafeguard.helpers.ConfirmCommand
 
-abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permission: String, vararg aliases: String): Command(name, permission, *aliases) {
+abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permission: String, vararg aliases: String): ConfirmCommand(name, permission, *aliases) {
     companion object {
         open class ConcurrentTasksHelperForConfigSaving(total: Int): ConcurrentTasksHelper(total) {
             var shouldSaveConfig = false
         }
+
+        data class ListAction(val isXBOX: Boolean = false, val isLazyList: Boolean, val isAdd: Boolean)
     }
     protected val config: Config
         get() = context.config
@@ -87,35 +91,58 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
         }
     }
 
+    /**
+     * Send confirm message to the command sender
+     */
+    abstract fun sendConfirmMessage(sender: CommandSender, args: Array<out String>, action: ListAction)
+
+    protected open fun possiblyDoAfterConfirmation(sender: CommandSender, args: Array<out String>, action: ListAction, callback: () -> Unit) {
+        if (config.confirm) {
+            sendConfirmMessage(sender, args, action)
+            confirm(sender, callback)
+        } else {
+            callback()  // Do it now
+        }
+    }
+
     override fun execute(sender: CommandSender, args: Array<out String>) {
         if (args.isEmpty()) {
             sendUsage(sender)
         } else {
             when (args[0]) {
+                "confirm" -> {
+                    if (!confirmed(sender)) {
+                        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Nothing to confirm, it might have expired"))
+                    }
+                }
                 "add" -> {
                     if (args.size > 1) {
-                        addAsync(sender, args.copyOfRange(1, args.size))
+                        val realArgs = args.copyOfRange(1, args.size)
+                        possiblyDoAfterConfirmation(sender, realArgs, ListAction(isLazyList = false, isAdd = true)) { addAsync(sender, realArgs) }
                     } else {
                         sendUsage(sender)
                     }
                 }
                 "x-add", "xadd" -> {
                     if (args.size > 1) {
-                        xAddAsync(sender, args.copyOfRange(1, args.size))
+                        val realArgs = args.copyOfRange(1, args.size)
+                        possiblyDoAfterConfirmation(sender, realArgs, ListAction(isXBOX = true, isLazyList = false, isAdd = true)) { xAddAsync(sender, realArgs) }
                     } else {
                         sendUsage(sender)
                     }
                 }
                 "lazy-add", "lazyadd", "ladd" -> {
                     if (args.size > 1) {
-                        lazyAdd(sender, args.copyOfRange(1, args.size))
+                        val realArgs = args.copyOfRange(1, args.size)
+                        possiblyDoAfterConfirmation(sender, realArgs, ListAction(isLazyList = true, isAdd = true)) { lazyAdd(sender, realArgs) }
                     } else {
                         sendUsage(sender)
                     }
                 }
                 "rm", "remove" -> {
                     if (args.size > 1) {
-                        removeAsync(sender, args.copyOfRange(1, args.size))
+                        val realArgs = args.copyOfRange(1, args.size)
+                        possiblyDoAfterConfirmation(sender, realArgs, ListAction(isLazyList = false, isAdd = false)) { removeAsync(sender, realArgs) }
                     } else {
                         sendUsage(sender)
                     }
@@ -123,14 +150,16 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
                 "x-rm", "xrm",
                 "x-remove", "xremove" -> {
                     if (args.size > 1) {
-                        xRemoveAsync(sender, args.copyOfRange(1, args.size))
+                        val realArgs = args.copyOfRange(1, args.size)
+                        possiblyDoAfterConfirmation(sender, realArgs, ListAction(isXBOX = true, isLazyList = false, isAdd = false)) { xRemoveAsync(sender, realArgs) }
                     } else {
                         sendUsage(sender)
                     }
                 }
                 "lazy-remove", "lazyremove", "lremove", "lrm" -> {
                     if (args.size > 1) {
-                        lazyRemove(sender, args.copyOfRange(1, args.size))
+                        val realArgs = args.copyOfRange(1, args.size)
+                        possiblyDoAfterConfirmation(sender, realArgs, ListAction(isLazyList = true, isAdd = false)) { lazyRemove(sender, realArgs) }
                     } else {
                         sendUsage(sender)
                     }

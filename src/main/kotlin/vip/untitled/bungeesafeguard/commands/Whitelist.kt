@@ -59,7 +59,7 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
                                 }
                             }
                         }
-                        is UserNotFoundException -> sender.sendMessage(TextComponent("${ChatColor.RED}User $usernameOrUUID ${ChatColor.AQUA}($uuid) ${ChatColor.RED}is not found and therefore cannot be whitelisted"))
+                        is UserNotFoundException -> sender.sendMessage(TextComponent("${ChatColor.RED}User $usernameOrUUID is not found and therefore cannot be whitelisted"))
                         else -> {
                             sender.sendMessage(TextComponent("${ChatColor.RED}Failed to whitelist $usernameOrUUID: $err"))
                             context.logger.warning("Failed to whitelist $usernameOrUUID:")
@@ -122,7 +122,7 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
                                 }
                             }
                         }
-                        is UserNotFoundException -> sender.sendMessage(TextComponent("${ChatColor.RED}User $usernameOrUUID ${ChatColor.AQUA}($uuid) ${ChatColor.RED}is not found and therefore cannot be removed from whitelist"))
+                        is UserNotFoundException -> sender.sendMessage(TextComponent("${ChatColor.RED}User $usernameOrUUID is not found and therefore cannot be removed from whitelist"))
                         else -> {
                             sender.sendMessage(TextComponent("${ChatColor.RED}Failed to remove $usernameOrUUID from whitelist: $err"))
                             context.logger.warning("Failed to remove $usernameOrUUID from whitelist:")
@@ -244,5 +244,19 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
             sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${ChatColor.RED}DISABLED"))
             config.save()
         }
+    }
+
+    /**
+     * Send confirm message to the command sender
+     */
+    override fun sendConfirmMessage(sender: CommandSender, args: Array<out String>, action: Companion.ListAction) {
+        sender.sendMessage(
+            TextComponent("${ChatColor.YELLOW}Are you sure you want to ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isAdd) "add" else "remove"} " +
+                    "${ChatColor.RESET}${ChatColor.YELLOW}the following ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isXBOX) "XBOX Live" else "Minecraft"} player(s) " +
+                    "${ChatColor.RESET}${ChatColor.YELLOW}${if (action.isAdd) "to" else "from"} the ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isLazyList) "lazy " else ""}whitelist " +
+                    "${ChatColor.RESET}${ChatColor.YELLOW}in the config file \"${ChatColor.AQUA}${ChatColor.BOLD}${config.configInUse}${ChatColor.RESET}${ChatColor.YELLOW}\"?\n" +
+                    "${ChatColor.AQUA}${ChatColor.BOLD}" + args.joinToString("\n") { "  $it" })
+        )
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Please use ${ChatColor.AQUA}/whitelist confirm ${ChatColor.YELLOW}in 10s to confirm"))
     }
 }

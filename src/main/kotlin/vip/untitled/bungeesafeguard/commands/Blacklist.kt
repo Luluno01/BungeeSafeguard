@@ -245,4 +245,18 @@ open class Blacklist(context: ConfigHolderPlugin): ListCommand(context, "blackli
             config.save()
         }
     }
+
+    /**
+     * Send confirm message to the command sender
+     */
+    override fun sendConfirmMessage(sender: CommandSender, args: Array<out String>, action: Companion.ListAction) {
+        sender.sendMessage(
+            TextComponent("${ChatColor.YELLOW}Are you sure you want to ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isAdd) "add" else "remove"} " +
+                    "${ChatColor.RESET}${ChatColor.YELLOW}the following ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isXBOX) "XBOX Live" else "Minecraft"} player(s) " +
+                    "${ChatColor.RESET}${ChatColor.YELLOW}${if (action.isAdd) "to" else "from"} the ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isLazyList) "lazy " else ""}blacklist " +
+                    "${ChatColor.RESET}${ChatColor.YELLOW}in the config file \"${ChatColor.AQUA}${ChatColor.BOLD}${config.configInUse}${ChatColor.RESET}${ChatColor.YELLOW}\"?\n" +
+                    "${ChatColor.AQUA}${ChatColor.BOLD}" + args.joinToString("\n") { "  $it" })
+        )
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Please use ${ChatColor.AQUA}/blacklist confirm ${ChatColor.YELLOW}in 10s to confirm"))
+    }
 }
