@@ -462,9 +462,9 @@ In this way, offline servers should be able to use this plugin painlessly.
 For example, suppose that you are using the default configuration file `config.yml` (to switch to a different configuration file, use command [bungeesafeguard load](#bungeesafeguard-load)). You just enabled confirmation and want to add the player `DummyPlayer` to the whitelist by executing the command `whitelist add DummyPlayer`.
 Then you will be asked:
 
-> Are you sure you want to add the following Minecraft player(s) to the whitelist in the config file config.yml?
->   DummyPlayer
-> Please use /whitelist confirm in 10s to confirm
+    Are you sure you want to add the following Minecraft player(s) to the whitelist in the config file config.yml?
+      DummyPlayer
+    Please use /whitelist confirm in 10s to confirm
 
 If you everything looks fine for you, use `whitelist confirm` in 10 seconds and `DummyPlayer` will be added into the whitelist.
 
