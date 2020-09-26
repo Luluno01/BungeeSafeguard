@@ -49,8 +49,8 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e
 * Add and remove players by their **username** or UUID (username-change-proof)
 * Add and remove XBOX Live players by their **Gamer Tag** or UUID (Gamertag-change-proof) (from v2.3, see [XBOX Live Player Support](#xbox-live-player-support-bedrock-edition-support) for more details)
 * Lazy translation from username to UUID (from v1.2, **offline server friendly**, see [lazy lists](#lazy-lists) for details)
-* Switch between multiple configuration files (e.g., a config for maintenance mode which whitelists administrators only)
-* Optional confirmation before adding or removing list entries
+* Switch between multiple configuration files (e.g., a config for maintenance mode which whitelists administrators only; from v2.4)
+* Optional confirmation before adding or removing list entries (from v2.4, see [Operation Confirmation](#operation-confirmation) for more details)
 
 ## Usage
 
