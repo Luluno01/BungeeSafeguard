@@ -22,6 +22,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e
       - [whitelist lazy-remove](#whitelist-lazy-remove)
       - [whitelist on](#whitelist-on)
       - [whitelist off](#whitelist-off)
+      - [whitelist confirm](#whitelist-confirm)
     - [Blacklist](#blacklist)
       - [blacklist add](#blacklist-add)
       - [blacklist x-add](#blacklist-x-add)
@@ -31,12 +32,15 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e
       - [blacklist lazy-remove](#blacklist-lazy-remove)
       - [blacklist on](#blacklist-on)
       - [blacklist off](#blacklist-off)
+      - [blacklist confirm](#blacklist-confirm)
     - [Main Command](#main-command)
+      - [bungeesafeguard load](#bungeesafeguard-load)
       - [bungeesafeguard reload](#bungeesafeguard-reload)
       - [bungeesafeguard status](#bungeesafeguard-status)
       - [bungeesafeguard dump](#bungeesafeguard-dump)
   - [Permission Nodes](#permission-nodes)
   - [Lazy Lists](#lazy-lists)
+  - [Operation Confirmation](#operation-confirmation)
   - [Important Notes](#important-notes)
 
 ## Features
@@ -45,6 +49,8 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:8afc4e
 * Add and remove players by their **username** or UUID (username-change-proof)
 * Add and remove XBOX Live players by their **Gamer Tag** or UUID (Gamertag-change-proof) (from v2.3, see [XBOX Live Player Support](#xbox-live-player-support-bedrock-edition-support) for more details)
 * Lazy translation from username to UUID (from v1.2, **offline server friendly**, see [lazy lists](#lazy-lists) for details)
+* Switch between multiple configuration files (e.g., a config for maintenance mode which whitelists administrators only)
+* Optional confirmation before adding or removing list entries
 
 ## Usage
 
@@ -84,12 +90,12 @@ The configuration file for BungeeSafeguard is `plugins/BungeeSafeguard/config.ym
 ```yaml
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 2.3               #
+#            Version: 2.4               #
 #          Author: Untitled             #
 #########################################
 
 # You can safely ignore this
-version: "2.3"
+version: "2.4"
 
 # Message to be sent to the player when that player is blocked for not being whitelisted
 whitelist-message: :( You are not whitelisted on this server
@@ -128,6 +134,9 @@ blacklist:
 
 # xbl-web-api: <a deployment of https://github.com/Prouser123/xbl-web-api>
 xbl-web-api: https://xbl-api.prouser123.me
+
+# confirm: <should request confirmation for add/remove operation?>
+confirm: false
 ```
 
 Note that if you enable both blacklist and whitelist (which is weird, but it is possible to do that), player in both lists will be blocked because blacklist has a higher priority over whitelist.
@@ -248,6 +257,14 @@ Turn off whitelist:
 whitelist off
 ```
 
+#### whitelist confirm
+
+Confirm the last issued whitelist command:
+
+```
+whitelist confirm
+```
+
 ### Blacklist
 
 Alias: `blist`.
@@ -362,9 +379,37 @@ Turn off blacklist:
 blacklist off
 ```
 
+#### blacklist confirm
+
+Confirm the last issued blacklist command:
+
+```
+blacklist confirm
+```
+
 ### Main Command
 
 Alias: `bsg`.
+
+#### bungeesafeguard load
+
+Alias: `bsg use`.
+
+Load configuration from a specific `.yml` file under `plugins/BungeeSafeguard/` (the extension `.yml` can be omitted):
+
+```
+bungeesafeguard load <config file>
+```
+
+Example:
+
+```
+bungeesafeguard load maintenance-config.yml
+```
+
+**Note: enabling [confirmation](#operation-confirmation) is suggested in order not to modify an unexpected configuration file if you are to use multiple configuration files.**
+
+*This feature is added as requested by issue #6.*
 
 #### bungeesafeguard reload
 
@@ -409,6 +454,21 @@ Records are added to/removed from lazy lists via `whitelist lazy-*` and `blackli
 Lazy-whitelist and lazy-blacklist work in a very similar way. Let's take lazy-whitelist as example, and you will understand how both of them work. Lazy-whitelist is a different list from the plain whitelist you access via `whitelist add` and `whitelist remove`. Upon record addition, username is added to lazy-whitelist rather than translated UUID, which may take some considerable time or even fail to translate. What's more, because the translation requests are sent to Mojang, implicitly requiring that the server is running in online mode (unless you hijack the requests and redirect them to your own authentication server). The workaround (or maybe it is actually a great feature) is not to do the translation immediately but to save the username in a temporary list, i.e. lazy-whitelist. Because server will be told the UUID of the player upon client connection (if I am right), we are able to lazily translate username to UUID without sending HTTP request. In other words, usernames in lazy-whitelist are translated into UUIDs and moved to whitelist (the plain one) once the server knows the corresponding UUID of the username, i.e. when player with the username connect to the server for the first time.
 
 In this way, offline servers should be able to use this plugin painlessly.
+
+## Operation Confirmation
+
+**By default**, BungeeSafeguard will **NOT** ask for confirmation of records addition/removal commands. If you want to be cautious, set the config entry `confirm` to `true`. Then you will need to use `whitelist confirm` (or `blacklist confirm`) to confirm your last issued `whitelist`-accessing (or `blacklist`-accessing) command in **10 seconds**.
+
+For example, suppose that you are using the default configuration file `config.yml` (to switch to a different configuration file, use command [bungeesafeguard load](#bungeesafeguard-load)). You just enabled confirmation and want to add the player `DummyPlayer` to the whitelist by executing the command `whitelist add DummyPlayer`.
+Then you will be asked:
+
+> Are you sure you want to add the following Minecraft player(s) to the whitelist in the config file config.yml?
+>   DummyPlayer
+> Please use /whitelist confirm in 10s to confirm
+
+If you everything looks fine for you, use `whitelist confirm` in 10 seconds and `DummyPlayer` will be added into the whitelist.
+
+*This feature is added as requested by issue #6.*
 
 ## Important Notes
 
