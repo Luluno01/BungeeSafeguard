@@ -99,7 +99,7 @@ open class Config(val context: Plugin) {
         configInUse = configName ?: loadConfigInUse(sender)
         val logger = RedirectedLogger.get(context, sender)
         logger.info("Using config file ${ChatColor.AQUA}$configInUse")
-        conf = loadConfigFromFile(configInUse)
+        conf = loadConfigFromFile(configInUse, sender)
         whitelist = extractWhitelist(conf)
         lazyWhitelist = extractLazyWhitelist(conf)
         blacklist = extractBlacklist(conf)
@@ -151,7 +151,12 @@ open class Config(val context: Plugin) {
         }
     }
 
-    open fun loadConfigFromFile(configName: String = DEFAULT_CONFIG): Configuration {
+    open fun loadConfigFromFile(configName: String = DEFAULT_CONFIG, sender: CommandSender?): Configuration {
+        val logger = RedirectedLogger.get(context, sender)
+        val configFile = File(dataFolder, configName)
+        if (configFile.createNewFile()) {
+            logger.info("${ChatColor.AQUA}configName${ChatColor.RESET} does not exist, created an empty one")
+        }
         return ConfigurationProvider.getProvider(YamlConfiguration::class.java).load(File(dataFolder, configName))
     }
 
@@ -163,6 +168,7 @@ open class Config(val context: Plugin) {
         conf.set(LAZY_BLACKLIST, lazyBlacklist.toTypedArray())
         conf.set(ENABLED_WHITELIST, enableWhitelist)
         conf.set(ENABLED_BLACKLIST, enableBlacklist)
+        conf.set(CONFIRM, confirm)
         ConfigurationProvider.getProvider(YamlConfiguration::class.java).save(conf, File(dataFolder, configInUse))
     }
 
