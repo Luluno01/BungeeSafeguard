@@ -6,11 +6,13 @@ import net.md_5.bungee.api.chat.TextComponent
 import vip.untitled.bungeesafeguard.ConfigHolderPlugin
 import vip.untitled.bungeesafeguard.helpers.UserNotFoundException
 import vip.untitled.bungeesafeguard.helpers.UserUUIDHelper
+import java.io.File
 import java.util.*
 
 open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whitelist", "bungeesafeguard.whitelist", "wlist") {
     override fun sendUsage(sender: CommandSender) {
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /whitelist import <path to whitelist.json>"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For normal Mojang players: /whitelist <add/remove/rm> <player ...>"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For XBOX Live players: /whitelist <x-add/xadd/x-remove/xremove/x-rm/xrm> <player ...>"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For both Mojang and XBOX players: /whitelist <lazy-add/lazy-remove/lazyadd/ladd/lazyremove/lremove/lrm> <player ...>"))
@@ -250,13 +252,23 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
      * Send confirm message to the command sender
      */
     override fun sendConfirmMessage(sender: CommandSender, args: Array<out String>, action: Companion.ListAction) {
-        sender.sendMessage(
-            TextComponent("${ChatColor.YELLOW}Are you sure you want to ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isAdd) "add" else "remove"} " +
-                    "${ChatColor.RESET}${ChatColor.YELLOW}the following ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isXBOX) "XBOX Live" else "Minecraft"} player(s) " +
-                    "${ChatColor.RESET}${ChatColor.YELLOW}${if (action.isAdd) "to" else "from"} the ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isLazyList) "lazy " else ""}whitelist " +
-                    "${ChatColor.RESET}${ChatColor.YELLOW}in the config file \"${ChatColor.AQUA}${ChatColor.BOLD}${config.configInUse}${ChatColor.RESET}${ChatColor.YELLOW}\"?\n" +
-                    "${ChatColor.AQUA}${ChatColor.BOLD}" + args.joinToString("\n") { "  $it" })
-        )
+        if (action.isImport) {
+            sender.sendMessage(
+                TextComponent("${ChatColor.YELLOW}Are you sure you want to ${ChatColor.AQUA}${ChatColor.BOLD}import UUIDs " +
+                        "${ChatColor.RESET}${ChatColor.YELLOW}from the following ${ChatColor.AQUA}${ChatColor.BOLD}external JSON file " +
+                        "${ChatColor.RESET}${ChatColor.YELLOW}to the ${ChatColor.AQUA}${ChatColor.BOLD}whitelist " +
+                        "${ChatColor.RESET}${ChatColor.YELLOW}in the config file \"${ChatColor.AQUA}${ChatColor.BOLD}${config.configInUse}${ChatColor.RESET}${ChatColor.YELLOW}\"?\n" +
+                        "${ChatColor.AQUA}${ChatColor.BOLD}  ${File(args[0]).absolutePath}")
+            )
+        } else {
+            sender.sendMessage(
+                TextComponent("${ChatColor.YELLOW}Are you sure you want to ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isAdd) "add" else "remove"} " +
+                        "${ChatColor.RESET}${ChatColor.YELLOW}the following ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isXBOX) "XBOX Live" else "Minecraft"} player(s) " +
+                        "${ChatColor.RESET}${ChatColor.YELLOW}${if (action.isAdd) "to" else "from"} the ${ChatColor.AQUA}${ChatColor.BOLD}${if (action.isLazyList) "lazy " else ""}whitelist " +
+                        "${ChatColor.RESET}${ChatColor.YELLOW}in the config file \"${ChatColor.AQUA}${ChatColor.BOLD}${config.configInUse}${ChatColor.RESET}${ChatColor.YELLOW}\"?\n" +
+                        "${ChatColor.AQUA}${ChatColor.BOLD}" + args.joinToString("\n") { "  $it" })
+            )
+        }
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Please use ${ChatColor.AQUA}/whitelist confirm ${ChatColor.YELLOW}in 10s to confirm"))
     }
 }

@@ -7,6 +7,10 @@ import vip.untitled.bungeesafeguard.Config
 import vip.untitled.bungeesafeguard.ConfigHolderPlugin
 import vip.untitled.bungeesafeguard.helpers.ConcurrentTasksHelper
 import vip.untitled.bungeesafeguard.helpers.ConfirmCommand
+import vip.untitled.bungeesafeguard.helpers.TypedJSON
+import java.io.File
+import java.io.IOException
+import java.util.*
 
 abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permission: String, vararg aliases: String): ConfirmCommand(name, permission, *aliases) {
     companion object {
@@ -14,16 +18,77 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
             var shouldSaveConfig = false
         }
 
-        data class ListAction(val isXBOX: Boolean = false, val isLazyList: Boolean, val isAdd: Boolean)
+        data class ListAction(
+            val isXBOX: Boolean = false,
+            val isLazyList: Boolean,
+            val isAdd: Boolean,
+            val isImport: Boolean = false
+        )
     }
     protected val config: Config
         get() = context.config
+
+    /**
+     * Load a JSON file synchronously
+     */
+    open fun loadJSON(file: File): TypedJSON {
+        return TypedJSON.fromString(file.readText())
+    }
+
+    /**
+     * Handle each UUID element in a JSON array file asynchronously
+     *
+     * Type of the file should be
+     * ```TypeScript
+     * type UUIDArray = {
+     *   uuid: string
+     * }[]
+     * ```
+     * @param sender Command sender
+     * @param file Target file
+     * @param callback callback function
+     */
+    open fun loadUUIDsInJSONArray(sender: CommandSender, file: File, callback: (uuid: Array<String>) -> Unit) {
+        context.proxy.scheduler.runAsync(context) {
+            val json = try {
+                loadJSON(file)
+            } catch (err: IOException) {
+                sender.sendMessage(TextComponent("${ChatColor.RED}\"${file.absolutePath}\" does not exists, or is unreadable"))
+                return@runAsync
+            }
+            if (!json.json.isJsonArray) {
+                sender.sendMessage(TextComponent("${ChatColor.RED}The content of \"${file.absolutePath}\" must be a JSON array"))
+                return@runAsync
+            }
+            val uuids = arrayListOf<String>()
+            for ((i, elem) in json.json.asJsonArray.withIndex()) {
+                val uuid = try {
+                    val obj = elem.asJsonObject
+                    obj.get("uuid").asString
+                } catch (err: Throwable) {
+                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}Element with index \"$i\" is invalid, ignored"))
+                    continue
+                }
+                uuids.add(uuid)
+            }
+            callback(uuids.toTypedArray())
+        }
+    }
 
     /**
      * Send usage to a command sender
      * @param sender Command sender
      */
     abstract fun sendUsage(sender: CommandSender)
+
+    /**
+     * Import UUID(s) from an existing file, merging the content into currently loaded list
+     * @param sender Command sender
+     * @param path Path to target file
+     */
+    open fun import(sender: CommandSender, path: String) {
+        loadUUIDsInJSONArray(sender, File(path)) { addAsync(sender, it) }
+    }
 
     /**
      * Add UUID(s) or username(s) to the list asynchronously
@@ -113,6 +178,14 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
                 "confirm" -> {
                     if (!confirmed(sender)) {
                         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Nothing to confirm, it might have expired"))
+                    }
+                }
+                "import" -> {
+                    if (args.size > 1) {
+                        val realArgs = args.copyOfRange(1, 2)
+                        possiblyDoAfterConfirmation(sender, realArgs, ListAction(isLazyList = false, isAdd = false, isImport = true)) { import(sender, args[1]) }
+                    } else {
+                        sendUsage(sender)
                     }
                 }
                 "add" -> {
