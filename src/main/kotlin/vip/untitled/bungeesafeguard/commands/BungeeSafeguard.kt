@@ -17,6 +17,96 @@ open class BungeeSafeguard(val context: ConfigHolderPlugin): Command("bungeesafe
         sender.sendMessage(TextComponent("${ChatColor.AQUA}  /bungeesafeguard status"))
         sender.sendMessage(TextComponent("${ChatColor.AQUA}  /bungeesafeguard dump"))
     }
+
+    /**
+     * Handle subcommand load/use
+     */
+    protected open fun handleLoad(sender: CommandSender, args: Array<out String>) {
+        if (args.size < 2) {
+            sendUsage(sender)
+            return
+        }
+        var name = args[1]
+
+        /* Start safety check */
+        if (Regex("""(^|[/\\])\.\.[/\\]""").find(name) != null) {
+            sender.sendMessage(TextComponent("${ChatColor.YELLOW}Parent folder \"..\" is not allowed in the config path"))
+            return
+        }
+        /* End safety check */
+
+        if (!name.endsWith(".yml")) name += ".yml"
+        val config = context.config
+        context.proxy.scheduler.runAsync(context) {
+            synchronized (config) {
+                val configInUseFile = File(context.dataFolder, Config.CONFIG_IN_USE)
+                try {
+                    configInUseFile.writeText(name)
+                } catch (err: IOException) {
+                    sender.sendMessage(TextComponent("${ChatColor.RED}Failed to update file \"${Config.CONFIG_IN_USE}\", aborting"))
+                    return@runAsync
+                }
+                try {
+                    config.reload(sender, name)
+                } catch (err: Throwable) {
+                    sender.sendMessage(TextComponent("${ChatColor.RED}Failed to load config file \"$name\""))
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle subcommand reload
+     */
+    protected open fun handleReload(sender: CommandSender, args: Array<out String>) {
+        context.proxy.scheduler.runAsync(context) {
+            synchronized (context.config) {
+                try {
+                    context.config.reload(sender)
+                    sender.sendMessage(TextComponent("${ChatColor.GREEN}BungeeSafeguard reloaded"))
+                } catch (e: Throwable) {
+                    sender.sendMessage(TextComponent("${ChatColor.RED}Failed to reload: $e"))
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle subcommand status
+     */
+    protected open fun handleStatus(sender: CommandSender, args: Array<out String>) {
+        val config = context.config
+        synchronized (config) {
+            sender.sendMessage(TextComponent("${ChatColor.GREEN}Using config file ${ChatColor.AQUA}${config.configInUse}"))
+            sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
+            sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
+        }
+    }
+
+    /**
+     * Handle subcommand dump
+     */
+    protected open fun handleDump(sender: CommandSender, args: Array<out String>) {
+        val config = context.config
+        synchronized (config) {
+            sender.sendMessage(TextComponent("${ChatColor.GREEN}Using config file ${ChatColor.AQUA}${config.configInUse}"))
+            sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyWhitelist.size} lazy record(s), ${config.whitelist.size} UUID record(s))"))
+            for (username in config.lazyWhitelist) {
+                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
+            }
+            for (uuid in config.whitelist) {
+                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
+            }
+            sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyBlacklist.size} lazy record(s), ${config.blacklist.size} UUID record(s))"))
+            for (username in config.lazyBlacklist) {
+                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
+            }
+            for (uuid in config.blacklist) {
+                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
+            }
+        }
+    }
+
     override fun execute(sender: CommandSender, args: Array<out String>) {
         if (args.isEmpty()) {
             sendUsage(sender)
@@ -24,77 +114,10 @@ open class BungeeSafeguard(val context: ConfigHolderPlugin): Command("bungeesafe
         }
         // This class is an exception that can access `config.*list` directly
         when (args[0]) {
-            "load", "use" -> {
-                if (args.size < 2) {
-                    sendUsage(sender)
-                    return
-                }
-                var name = args[1]
-
-                /* Start safety check */
-                if (Regex("""(^|[/\\])\.\.[/\\]""").find(name) != null) {
-                    sender.sendMessage(TextComponent("${ChatColor.YELLOW}Parent folder \"..\" is not allowed in the config path"))
-                    return
-                }
-                /* End safety check */
-
-                if (!name.endsWith(".yml")) name += ".yml"
-                val config = context.config
-                context.proxy.scheduler.runAsync(context) {
-                    synchronized (config) {
-                        val configInUseFile = File(context.dataFolder, Config.CONFIG_IN_USE)
-                        try {
-                            configInUseFile.writeText(name)
-                        } catch (err: IOException) {
-                            sender.sendMessage(TextComponent("${ChatColor.RED}Failed to update file \"${Config.CONFIG_IN_USE}\", aborting"))
-                            return@runAsync
-                        }
-                        try {
-                            config.reload(sender, name)
-                        } catch (err: Throwable) {
-                            sender.sendMessage(TextComponent("${ChatColor.RED}Failed to load config file \"$name\""))
-                        }
-                    }
-                }
-            }
-            "reload" -> context.proxy.scheduler.runAsync(context) {
-                synchronized (context.config) {
-                    try {
-                        context.config.reload(sender)
-                        sender.sendMessage(TextComponent("${ChatColor.GREEN}BungeeSafeguard reloaded"))
-                    } catch (e: Throwable) {
-                        sender.sendMessage(TextComponent("${ChatColor.RED}Failed to reload: $e"))
-                    }
-                }
-            }
-            "status" -> {
-                val config = context.config
-                synchronized (config) {
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Using config file ${ChatColor.AQUA}${config.configInUse}"))
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
-                }
-            }
-            "dump" -> {
-                val config = context.config
-                synchronized (config) {
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Using config file ${ChatColor.AQUA}${config.configInUse}"))
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyWhitelist.size} lazy record(s), ${config.whitelist.size} UUID record(s))"))
-                    for (username in config.lazyWhitelist) {
-                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
-                    }
-                    for (uuid in config.whitelist) {
-                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
-                    }
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyBlacklist.size} lazy record(s), ${config.blacklist.size} UUID record(s))"))
-                    for (username in config.lazyBlacklist) {
-                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
-                    }
-                    for (uuid in config.blacklist) {
-                        sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
-                    }
-                }
-            }
+            "load", "use" -> handleLoad(sender, args)
+            "reload" -> handleReload(sender, args)
+            "status" -> handleStatus(sender, args)
+            "dump" -> handleDump(sender, args)
             else -> sendUsage(sender)
         }
     }
