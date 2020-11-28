@@ -4,7 +4,7 @@ A blacklist and whitelist BungeeCord plugin with support of UUID look up.
 
 This plugin was formerly named BungeeGuard. In order not to conflict with the existing plugin BungeeGuard, this plugin is renamed to BungeeSafeguard from v2.0.
 
-Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:c1ac7d5:377`.
+Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:1d2221d:384`.
 
 - [BungeeSafeguard](#bungeesafeguard)
   - [Features](#features)
@@ -20,6 +20,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:c1ac7d
       - [whitelist remove](#whitelist-remove)
       - [whitelist x-remove](#whitelist-x-remove)
       - [whitelist lazy-remove](#whitelist-lazy-remove)
+      - [whitelist import](#whitelist-import)
       - [whitelist on](#whitelist-on)
       - [whitelist off](#whitelist-off)
       - [whitelist confirm](#whitelist-confirm)
@@ -30,6 +31,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:c1ac7d
       - [blacklist remove](#blacklist-remove)
       - [blacklist x-remove](#blacklist-x-remove)
       - [blacklist lazy-remove](#blacklist-lazy-remove)
+      - [blacklist import](#blacklist-import)
       - [blacklist on](#blacklist-on)
       - [blacklist off](#blacklist-off)
       - [blacklist confirm](#blacklist-confirm)
@@ -51,6 +53,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:c1ac7d
 * Lazy translation from username to UUID (from v1.2, **offline server friendly**, see [lazy lists](#lazy-lists) for details)
 * Switch between multiple configuration files (e.g., a config for maintenance mode which whitelists administrators only; from v2.4)
 * Optional confirmation before adding or removing list entries (from v2.4, see [Operation Confirmation](#operation-confirmation) for more details)
+* Import from old `whitelist.json` or `banned-players.json` (from v2.5, resolves issue #7; see [whitelist import](#whitelist-import) and [blacklist import](#blacklist-import) for more details)
 
 ## Usage
 
@@ -241,6 +244,25 @@ Example:
 whitelist lazy-remove DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
 ```
 
+#### whitelist import
+
+Import UUID(s) from an existing JSON file, e.g. your old `whitelist.json`, to the whitelist.
+
+```
+whitelist import <path to whitelist.json>
+```
+
+Note that `<path to whitelist.json>` could be either an absolute path, e.g. `/home/mc/old-mc-server/whitelist.json`,
+or a path relative to the **working directory** of the running BungeeCord process, e.g. `../old-mc-server/whitelist.json`.
+
+Example:
+
+```
+whitelist import whitelist.json
+```
+
+*This feature is added as requested by issue #7.*
+
 #### whitelist on
 
 Turn on whitelist:
@@ -362,6 +384,25 @@ Example:
 ```
 blacklist lazy-remove DummyPlayer0 DummyPlayer1 7be767e5-327c-4abd-852b-afab3ec1e2ff DummyPlayer2
 ```
+
+#### blacklist import
+
+Import UUID(s) from an existing JSON file, e.g. your old `banned-players.json`, to the blacklist.
+
+```
+blacklist import <path to banned-players.json>
+```
+
+Note that `<path to banned-players.json>` could be either an absolute path, e.g. `/home/mc/old-mc-server/banned-players.json`,
+or a path relative to the **working directory** of the running BungeeCord process, e.g. `../old-mc-server/banned-players.json`.
+
+Example:
+
+```
+blacklist import banned-players.json
+```
+
+*This feature is added as requested by issue #7.*
 
 #### blacklist on
 
