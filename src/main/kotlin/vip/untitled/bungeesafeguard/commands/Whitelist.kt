@@ -3,13 +3,13 @@ package vip.untitled.bungeesafeguard.commands
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
-import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import vip.untitled.bungeesafeguard.MetaHolderPlugin
 import vip.untitled.bungeesafeguard.helpers.UserNotFoundException
 import vip.untitled.bungeesafeguard.helpers.UserUUIDHelper
 import java.io.File
 import java.util.*
 
-open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whitelist", "bungeesafeguard.whitelist", "wlist") {
+open class Whitelist(context: MetaHolderPlugin): ListCommand(context, "whitelist", "bungeesafeguard.whitelist", "wlist") {
     override fun sendUsage(sender: CommandSender) {
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /whitelist import <path to whitelist.json>"))
@@ -17,7 +17,20 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For XBOX Live players: /whitelist <x-add/xadd/x-remove/xremove/x-rm/xrm> <player ...>"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For both Mojang and XBOX players: /whitelist <lazy-add/lazy-remove/lazyadd/ladd/lazyremove/lremove/lrm> <player ...>"))
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /whitelist <on/off>"))
+        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /whitelist <list/ls/show/dump>"))
     }
+
+    override val listName: String
+        get() = "whitelist"
+
+    override val listEnabled: Boolean
+        get() = config.enableWhitelist
+
+    override val list: MutableSet<UUID>
+        get() = config.whitelist
+
+    override val lazyList: MutableSet<String>
+        get() = config.lazyWhitelist
 
     /**
      * Add UUID(s) or username(s) to whitelist asynchronously
@@ -39,13 +52,18 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
 
     protected fun addAsync(sender: CommandSender, args: Array<out String>, xbox: Boolean) {
         var lastSyncError: Throwable? = null
-        val concurrentTasksHelper = getConcurrentTasksHelperForConfigSaving(args.size)
+        val concurrentTasksHelper = getConcurrentTasksHelperForDataSaving(args.size)
         for (usernameOrUUID in args) {
-            val onUUID = { err: Throwable?, uuid: UUID? ->
+            val onUUID = { err: Throwable?, uuid: UUID?, username: String? ->
                 try {
                     when (err) {
                         null -> {
                             assert(uuid != null) { "Both error and UUID are null!" }
+                            if (username != null) {
+                                if (userCache.add(uuid!!, username)) {
+                                    concurrentTasksHelper.shouldSaveUserCache = true
+                                }
+                            }
                             synchronized(config) {
                                 if (config.inBlacklist(uuid!!)) {
                                     sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} ${ChatColor.AQUA}($uuid) ${ChatColor.YELLOW}is already blacklisted, whose priority is higher than whitelist"))
@@ -107,9 +125,9 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
 
     protected fun removeAsync(sender: CommandSender, args: Array<out String>, xbox: Boolean) {
         var lastSyncError: Throwable? = null
-        val concurrentTasksHelper = getConcurrentTasksHelperForConfigSaving(args.size)
+        val concurrentTasksHelper = getConcurrentTasksHelperForDataSaving(args.size)
         for (usernameOrUUID in args) {
-            val onUUID = { err: Throwable?, uuid: UUID? ->
+            val onUUID = { err: Throwable?, uuid: UUID?, _: String? ->
                 try {
                     when (err) {
                         null -> {
@@ -121,6 +139,10 @@ open class Whitelist(context: ConfigHolderPlugin): ListCommand(context, "whiteli
                                     concurrentTasksHelper.shouldSaveConfig = true
                                 } else {
                                     sender.sendMessage(TextComponent("${ChatColor.YELLOW}${usernameOrUUID} ${ChatColor.AQUA}($uuid) ${ChatColor.YELLOW}is not in whitelist"))
+                                }
+                                if (!config.inBlacklist(uuid) && userCache.remove(uuid) != null) {
+                                    // Not in both lists
+                                    concurrentTasksHelper.shouldSaveUserCache = true
                                 }
                             }
                         }

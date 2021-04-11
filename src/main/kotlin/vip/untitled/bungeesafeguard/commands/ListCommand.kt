@@ -4,18 +4,21 @@ import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
 import vip.untitled.bungeesafeguard.Config
-import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import vip.untitled.bungeesafeguard.MetaHolderPlugin
+import vip.untitled.bungeesafeguard.UserCache
 import vip.untitled.bungeesafeguard.helpers.ConcurrentTasksHelper
 import vip.untitled.bungeesafeguard.helpers.ConfirmCommand
+import vip.untitled.bungeesafeguard.helpers.ListDumper
 import vip.untitled.bungeesafeguard.helpers.TypedJSON
 import java.io.File
 import java.io.IOException
 import java.util.*
 
-abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permission: String, vararg aliases: String): ConfirmCommand(name, permission, *aliases) {
+abstract class ListCommand(val context: MetaHolderPlugin, name: String, permission: String, vararg aliases: String): ConfirmCommand(name, permission, *aliases) {
     companion object {
-        open class ConcurrentTasksHelperForConfigSaving(total: Int): ConcurrentTasksHelper(total) {
+        open class ConcurrentTasksHelperForDataSaving(total: Int): ConcurrentTasksHelper(total) {
             var shouldSaveConfig = false
+            var shouldSaveUserCache = false
         }
 
         data class ListAction(
@@ -27,6 +30,29 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
     }
     protected val config: Config
         get() = context.config
+
+    protected val userCache: UserCache
+        get() = context.userCache
+
+    /**
+     * Name of this list
+     */
+    protected abstract val listName: String
+
+    /**
+     * Whether the list (not this command) is enabled
+     */
+    protected abstract val listEnabled: Boolean
+
+    /**
+     * Reference to the underlying list
+     */
+    protected abstract val list: MutableSet<UUID>
+
+    /**
+     * Reference to the underlying lazy list
+     */
+    protected abstract val lazyList: MutableSet<String>
 
     /**
      * Load a JSON file synchronously
@@ -73,6 +99,23 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
             }
             callback(uuids.toTypedArray())
         }
+    }
+
+    /**
+     * Add a user to the user cache
+     * @param id User's ID
+     * @param username Username
+     */
+    open fun addToUserCache(id: UUID, username: String) {
+        userCache.addAndSave(id, username)
+    }
+
+    /**
+     * Remove a user from the cache
+     * @param id User's ID
+     */
+    open fun removeFromUserCache(id: UUID) {
+        userCache.removeAndSave(id)
     }
 
     /**
@@ -144,13 +187,14 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
      */
     abstract fun off(sender: CommandSender)
 
-    open fun getConcurrentTasksHelperForConfigSaving(totalTasks: Int): ConcurrentTasksHelperForConfigSaving {
-        return object: ConcurrentTasksHelperForConfigSaving(totalTasks) {
+    open fun getConcurrentTasksHelperForDataSaving(totalTasks: Int): ConcurrentTasksHelperForDataSaving {
+        return object: ConcurrentTasksHelperForDataSaving(totalTasks) {
             override fun onCompletion() {
                 if (shouldSaveConfig) {
-                    synchronized (config) {
-                        config.save()
-                    }
+                    config.save()
+                }
+                if (shouldSaveUserCache) {
+                    userCache.save()
                 }
             }
         }
@@ -242,6 +286,13 @@ abstract class ListCommand(val context: ConfigHolderPlugin, name: String, permis
                 }
                 "off" -> {
                     off(sender)
+                }
+                "list", "ls", "show", "dump" -> {
+                    val config = context.config
+                    synchronized(config) {
+                        ListDumper.printListStatus(sender, listName.capitalize(), listEnabled)
+                        ListDumper.printListsContent(sender, lazyList, list, userCache)
+                    }
                 }
                 else -> sendUsage(sender)
             }

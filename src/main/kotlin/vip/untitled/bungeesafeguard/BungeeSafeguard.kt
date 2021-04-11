@@ -9,7 +9,7 @@ import java.io.IOException
 
 
 @Suppress("unused")
-open class BungeeSafeguard: ConfigHolderPlugin() {
+open class BungeeSafeguard: MetaHolderPlugin() {
     internal lateinit var events: Events
     private lateinit var whitelistCommand: Whitelist
     private lateinit var blacklistCommand: Blacklist
@@ -19,6 +19,7 @@ open class BungeeSafeguard: ConfigHolderPlugin() {
         proxy.pluginManager.registerListener(this, events)
 
         loadConfig(null)
+        loadUserCache()
         whitelistCommand = Whitelist(this)
         proxy.pluginManager.registerCommand(this, whitelistCommand)
         blacklistCommand = Blacklist(this)
@@ -77,12 +78,25 @@ open class BungeeSafeguard: ConfigHolderPlugin() {
         config.reload(sender)
     }
 
+    open fun reloadUserCache() {
+        userCache.reload()
+    }
+
     open fun loadConfig(sender: CommandSender?) {
         config = Config(this)
         try {
             config.load(sender)
         } catch (err: IOException) {
             logger.warning("Unable to read config file \"${config.configInUse}\", please check the config file and if the content of \"${Config.CONFIG_IN_USE}\" is correct")
+        }
+    }
+
+    open fun loadUserCache() {
+        userCache = UserCache(this)
+        try {
+            userCache.load()
+        } catch (err: IOException) {
+            logger.warning("Unable to read user cache file \"${UserCache.CACHE_FILE}\", please check the user cache file or simply delete it")
         }
     }
 }

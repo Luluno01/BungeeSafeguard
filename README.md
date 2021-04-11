@@ -4,7 +4,7 @@ A blacklist and whitelist BungeeCord plugin with support of UUID look up.
 
 This plugin was formerly named BungeeGuard. In order not to conflict with the existing plugin BungeeGuard, this plugin is renamed to BungeeSafeguard from v2.0.
 
-Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:1d2221d:384`.
+Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.5-SNAPSHOT:454f9d4:404`.
 
 - [BungeeSafeguard](#bungeesafeguard)
   - [Features](#features)
@@ -24,6 +24,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:1d2221
       - [whitelist on](#whitelist-on)
       - [whitelist off](#whitelist-off)
       - [whitelist confirm](#whitelist-confirm)
+      - [whitelist list](#whitelist-list)
     - [Blacklist](#blacklist)
       - [blacklist add](#blacklist-add)
       - [blacklist x-add](#blacklist-x-add)
@@ -35,6 +36,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.16-R0.4-SNAPSHOT:1d2221
       - [blacklist on](#blacklist-on)
       - [blacklist off](#blacklist-off)
       - [blacklist confirm](#blacklist-confirm)
+      - [blacklist list](#blacklist-list)
     - [Main Command](#main-command)
       - [bungeesafeguard load](#bungeesafeguard-load)
       - [bungeesafeguard reload](#bungeesafeguard-reload)
@@ -93,12 +95,12 @@ The configuration file for BungeeSafeguard is `plugins/BungeeSafeguard/config.ym
 ```yaml
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 2.5               #
+#            Version: 2.6               #
 #          Author: Untitled             #
 #########################################
 
 # You can safely ignore this
-version: "2.5"
+version: "2.6"
 
 # Message to be sent to the player when that player is blocked for not being whitelisted
 whitelist-message: :( You are not whitelisted on this server
@@ -287,6 +289,31 @@ Confirm the last issued whitelist command:
 whitelist confirm
 ```
 
+#### whitelist list
+
+Alias: `whitelist ls`, `whitelist show` or `whitelist dump`.
+
+Dump whitelist and lazy whitelist with at most 10 last known usernames:
+
+```
+whitelist list
+```
+
+Example output:
+
+```
+Whitelist ENABLED
+2 lazy record(s)
+  foo
+  bar
+3 UUID record(s) and the last known names (in reverse chronological order)
+  00000000-1111-2222-3333-666666666666 LatestName, OldNameLastMonth, OldNameLastYear
+  ffffffff-1111-2222-3333-666666666666
+  eeeeeeee-1111-2222-3333-666666666666 LatestName123
+```
+
+*This feature is added as requested by issue #8.*
+
 ### Blacklist
 
 Alias: `blist`.
@@ -428,6 +455,31 @@ Confirm the last issued blacklist command:
 blacklist confirm
 ```
 
+#### blacklist list
+
+Alias: `blacklist ls`, `blacklist show` or `blacklist dump`.
+
+Dump blacklist and lazy blacklist with at most 10 last known usernames:
+
+```
+whitelist list
+```
+
+Example output:
+
+```
+Blacklist ENABLED
+2 lazy record(s)
+  foo
+  bar
+3 UUID record(s) and the last known names (in reverse chronological order)
+  00000000-1111-2222-3333-666666666666 LatestName, OldNameLastMonth, OldNameLastYear
+  ffffffff-1111-2222-3333-666666666666
+  eeeeeeee-1111-2222-3333-666666666666 LatestName123
+```
+
+*This feature is added as requested by issue #8.*
+
 ### Main Command
 
 Alias: `bsg`.
@@ -517,3 +569,5 @@ BungeeSafeguard does asynchronous UUID look up when you execute add/remove on th
 It's recommended to execute those command only in console, and wait patiently for the completion feedback from the command before executing other commands of BungeeSafeguard.
 
 Offline servers should be able to use this plugin by using lazy lists or supplying BungeeSafeguard with players' UUIDs rather than their usernames. However, offline servers are still suffering from UUID abuse if they have no authentication plugin installed or have no external authentication mechanism. Offline server owners need to fully understand whitelist and blacklist is **NOT** a prevention of UUID abuse.
+
+Last but not least, you should always be prepared for the worst situation, for example, when BungeeCord or BungeeSafeguard somehow, magically, fail to protect your servers. Backup is a good way to counter Murphy's law.

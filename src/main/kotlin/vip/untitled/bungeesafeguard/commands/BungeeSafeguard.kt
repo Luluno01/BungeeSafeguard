@@ -5,11 +5,13 @@ import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.plugin.Command
 import vip.untitled.bungeesafeguard.Config
-import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import vip.untitled.bungeesafeguard.MetaHolderPlugin
+import vip.untitled.bungeesafeguard.helpers.ListDumper
 import java.io.File
 import java.io.IOException
+import java.util.*
 
-open class BungeeSafeguard(val context: ConfigHolderPlugin): Command("bungeesafeguard", "bungeesafeguard.main", "bsg") {
+open class BungeeSafeguard(val context: MetaHolderPlugin): Command("bungeesafeguard", "bungeesafeguard.main", "bsg") {
     open fun sendUsage(sender: CommandSender) {
         sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
         sender.sendMessage(TextComponent("${ChatColor.AQUA}  /bungeesafeguard load/use <config-file-name> ${ChatColor.YELLOW}(must be yml file, the extension \".yml\" can be omitted)"))
@@ -60,14 +62,13 @@ open class BungeeSafeguard(val context: ConfigHolderPlugin): Command("bungeesafe
      */
     protected open fun handleReload(sender: CommandSender, args: Array<out String>) {
         context.proxy.scheduler.runAsync(context) {
-            synchronized (context.config) {
-                try {
-                    context.config.reload(sender)
-                    sender.sendMessage(TextComponent("${ChatColor.GREEN}BungeeSafeguard reloaded"))
-                } catch (e: Throwable) {
-                    sender.sendMessage(TextComponent("${ChatColor.RED}Failed to reload: $e"))
-                }
+            try {
+                context.config.reload(sender)
+                sender.sendMessage(TextComponent("${ChatColor.GREEN}BungeeSafeguard reloaded"))
+            } catch (e: Throwable) {
+                sender.sendMessage(TextComponent("${ChatColor.RED}Failed to reload: $e"))
             }
+            context.userCache.reload()
         }
     }
 
@@ -89,21 +90,12 @@ open class BungeeSafeguard(val context: ConfigHolderPlugin): Command("bungeesafe
     protected open fun handleDump(sender: CommandSender, args: Array<out String>) {
         val config = context.config
         synchronized (config) {
+            val cache = context.userCache
             sender.sendMessage(TextComponent("${ChatColor.GREEN}Using config file ${ChatColor.AQUA}${config.configInUse}"))
-            sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyWhitelist.size} lazy record(s), ${config.whitelist.size} UUID record(s))"))
-            for (username in config.lazyWhitelist) {
-                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
-            }
-            for (uuid in config.whitelist) {
-                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
-            }
-            sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"} ${ChatColor.GOLD}(${config.lazyBlacklist.size} lazy record(s), ${config.blacklist.size} UUID record(s))"))
-            for (username in config.lazyBlacklist) {
-                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $username"))
-            }
-            for (uuid in config.blacklist) {
-                sender.sendMessage(TextComponent("${ChatColor.AQUA}  $uuid"))
-            }
+            ListDumper.printListStatus(sender, "Whitelist", config.enableWhitelist)
+            ListDumper.printListsContent(sender, config.lazyWhitelist, config.whitelist, cache)
+            ListDumper.printListStatus(sender, "Blacklist", config.enableBlacklist)
+            ListDumper.printListsContent(sender, config.lazyBlacklist, config.blacklist, cache)
         }
     }
 

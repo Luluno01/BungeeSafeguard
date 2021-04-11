@@ -1,7 +1,7 @@
 package vip.untitled.bungeesafeguard.helpers
 
 import net.md_5.bungee.api.plugin.Plugin
-import vip.untitled.bungeesafeguard.ConfigHolderPlugin
+import vip.untitled.bungeesafeguard.MetaHolderPlugin
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -10,7 +10,7 @@ import java.util.*
 import javax.net.ssl.HttpsURLConnection
 
 object UserUUIDHelper {
-    private fun getUUIDFromUsername(context: Plugin, username: String, callback: (Throwable?, UUID?) -> Unit) {
+    private fun getUUIDFromUsername(context: Plugin, username: String, callback: (Throwable?, UUID?, String?) -> Unit) {
         context.proxy.scheduler.runAsync(context) {
             var connection: HttpsURLConnection? = null
             try {
@@ -34,17 +34,17 @@ object UserUUIDHelper {
                         )
                         callback(
                             null,
-                            uuid
+                            uuid,
+                            username
                         )
                     }
                     204 -> {
-
                         throw UserNotFoundException("User $username cannot be found from Mojang")
                     }
                     else -> throw IOException("Unable to handle response with status code ${connection.responseCode}")
                 }
             } catch (e: Throwable) {
-                callback(e, null)
+                callback(e, null, null)
             } finally {
                 try {
                     // InputStream should have been closed
@@ -55,9 +55,9 @@ object UserUUIDHelper {
         }
     }
 
-    fun getUUIDFromString(context: Plugin, usernameOrUUID: String, callback: (Throwable?, UUID?) -> Unit) {
+    fun getUUIDFromString(context: Plugin, usernameOrUUID: String, callback: (Throwable?, UUID?, String?) -> Unit) {
         try {
-            callback(null, UUID.fromString(usernameOrUUID))
+            callback(null, UUID.fromString(usernameOrUUID), null)
             return
         } catch (e: IllegalArgumentException) {}
         getUUIDFromUsername(
@@ -85,7 +85,7 @@ object UserUUIDHelper {
         )
     }
 
-    private fun doGetUUIDFromXBOXTag(context: ConfigHolderPlugin, tag: String, callback: (Throwable?, UUID?) -> Unit) {
+    private fun doGetUUIDFromXBOXTag(context: MetaHolderPlugin, tag: String, callback: (Throwable?, UUID?, String?) -> Unit) {
         var xblWebAPIUrl = context.config.xblWebAPIUrl ?:
             error("XBL Web API URL must be specified for XUID look up")
         if (!xblWebAPIUrl.endsWith('/')) xblWebAPIUrl += '/'
@@ -101,15 +101,16 @@ object UserUUIDHelper {
                     200 -> {
                         callback(
                             null,
-                            getUUIDFromXUID(response.toLong())
+                            getUUIDFromXUID(response.toLong()),
+                            tag
                         )
                     }
                     else -> throw IOException("Unable to handle response with status code ${connection.responseCode}")
                 }
             } catch (e: FileNotFoundException) {
-                callback(UserNotFoundException("User $tag cannot be found from XBOX Live", e), null)
+                callback(UserNotFoundException("User $tag cannot be found from XBOX Live", e), null, null)
             } catch (e: Throwable) {
-                callback(e, null)
+                callback(e, null, null)
             } finally {
                 try {
                     // InputStream should have been closed
@@ -120,9 +121,9 @@ object UserUUIDHelper {
         }
     }
 
-    fun getUUIDFromXBOXTag(context: ConfigHolderPlugin, tagOrUUID: String, callback: (Throwable?, UUID?) -> Unit) {
+    fun getUUIDFromXBOXTag(context: MetaHolderPlugin, tagOrUUID: String, callback: (Throwable?, UUID?, String?) -> Unit) {
         try {
-            callback(null, UUID.fromString(tagOrUUID))
+            callback(null, UUID.fromString(tagOrUUID), null)
             return
         } catch (e: IllegalArgumentException) {}
         doGetUUIDFromXBOXTag(
