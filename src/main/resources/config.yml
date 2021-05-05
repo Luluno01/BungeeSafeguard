@@ -1,10 +1,10 @@
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 2.6               #
+#            Version: 2.6.1             #
 #          Author: Untitled             #
 #########################################
 
-version: "2.6"
+version: "2.6.1"
 whitelist-message: :( You are not whitelisted on this server
 blacklist-message: :( We can't let you enter this server
 no-uuid-message: :( Name yourself
