@@ -69,19 +69,9 @@ object UserUUIDHelper {
 
     fun getUUIDFromXUID(xuid: Long): UUID {
         return UUID.fromString(
-            "00000000-0000-0000-${xuid.ushr(56).and(0xff).toString(16).padStart(2, '0')}${
-                xuid.ushr(
-                    48
-                ).and(0xff).toString(16).padStart(2, '0')
-            }-${xuid.ushr(32).and(0xff).toString(16).padStart(2, '0')}${
-                xuid.ushr(
-                    24
-                ).and(0xff).toString(16).padStart(2, '0')
-            }${xuid.ushr(16).and(0xff).toString(16).padStart(2, '0')}${
-                xuid.ushr(8).and(
-                    0xff
-                ).toString(16).padStart(2, '0')
-            }${xuid.and(0xff).toString(16).padStart(2, '0')}"
+            StringBuilder("00000000-0000-0000-")
+                .append(xuid.toString(16).padStart(16, '0'))
+                .insert(23, '-').toString()
         )
     }
 
