@@ -1,30 +1,57 @@
 package vip.untitled.bungeesafeguard
 
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
-import vip.untitled.bungeesafeguard.commands.Blacklist
 import vip.untitled.bungeesafeguard.commands.BungeeSafeguard
-import vip.untitled.bungeesafeguard.commands.Whitelist
+import vip.untitled.bungeesafeguard.commands.ListCommand
+import vip.untitled.bungeesafeguard.config.UUIDList
 import java.io.IOException
 
 
 @Suppress("unused")
 open class BungeeSafeguard: MetaHolderPlugin() {
     internal lateinit var events: Events
-    private lateinit var whitelistCommand: Whitelist
-    private lateinit var blacklistCommand: Blacklist
+    private lateinit var whitelistCommand: ListCommand
+    private lateinit var blacklistCommand: ListCommand
     override fun onEnable() {
-        logger.info("${ChatColor.GREEN}BungeeSafeguard enabled")
+        // Load config and user cache
+        runBlocking {
+            joinAll(
+                GlobalScope.launch { loadConfig(null) },
+                GlobalScope.launch { loadUserCache() }
+            )
+        }
+
+        // Register events
         events = Events(this)
         proxy.pluginManager.registerListener(this, events)
 
-        loadConfig(null)
-        loadUserCache()
-        whitelistCommand = Whitelist(this)
+        // Register commands
+        val config = config!!
+        val client = HttpClient(CIO)
+        whitelistCommand = ListCommand(
+            this, client,
+            config.listMgr, config.whitelist,
+            "whitelist", "bungeesafeguard.whitelist",
+            "wlist"
+        )
         proxy.pluginManager.registerCommand(this, whitelistCommand)
-        blacklistCommand = Blacklist(this)
+        blacklistCommand = ListCommand(
+            this, client,
+            config.listMgr, config.blacklist,
+            "blacklist", "bungeesafeguard.blacklist",
+            "blist"
+        )
         proxy.pluginManager.registerCommand(this, blacklistCommand)
         proxy.pluginManager.registerCommand(this, BungeeSafeguard(this))
+
+        logger.info("${ChatColor.GREEN}BungeeSafeguard enabled")
     }
 
     override fun onDisable() {
@@ -32,26 +59,33 @@ open class BungeeSafeguard: MetaHolderPlugin() {
         blacklistCommand.destroy()
         proxy.pluginManager.unregisterListener(events)
         logger.info("Saving configuration")
+        val config = config
+        if (config == null) {
+            logger.severe("Config was not initialized in memory, skip config dumping")
+            return
+        }
         try {
-            config.save()
+            runBlocking { config.save() }
             logger.info("Configuration saved")
         } catch (err: Throwable) {
             logger.severe("Failed to save configuration")
             err.printStackTrace()
+            val whitelist: UUIDList = config.whitelist
+            val blacklist: UUIDList = config.blacklist
             logger.warning("======== Start dumping name of config file in use for data recovery ========")
             logger.warning(config.configInUse)
             logger.warning("======== End dumping name of config file in use for data recovery ========")
             logger.warning("======== Start dumping lazy-whitelist for data recovery ========")
-            logger.warning(config.lazyWhitelist.joinToString { '"' + it.replace("\"", "\\\"") + '"' })
+            logger.warning(whitelist.lazyList.joinToString { '"' + it.replace("\"", "\\\"") + '"' })
             logger.warning("======== End dumping lazy-whitelist for data recovery ========")
             logger.warning("======== Start dumping lazy-blacklist for data recovery ========")
-            logger.warning(config.lazyBlacklist.joinToString { '"' + it.replace("\"", "\\\"") + '"' })
+            logger.warning(blacklist.lazyList.joinToString { '"' + it.replace("\"", "\\\"") + '"' })
             logger.warning("======== End dumping lazy-blacklist for data recovery ========")
             logger.warning("======== Start dumping whitelist for data recovery ========")
-            logger.warning(config.whitelist.joinToString())
+            logger.warning(whitelist.list.joinToString())
             logger.warning("======== End dumping whitelist for data recovery ========")
             logger.warning("======== Start dumping blacklist for data recovery ========")
-            logger.warning(config.blacklist.joinToString())
+            logger.warning(blacklist.list.joinToString())
             logger.warning("======== End dumping blacklist for data recovery ========")
             logger.warning("======== Start dumping whitelist message for data recovery ========")
             logger.warning(config.whitelistMessage)
@@ -60,10 +94,10 @@ open class BungeeSafeguard: MetaHolderPlugin() {
             logger.warning(config.blacklistMessage)
             logger.warning("======== End dumping blacklist message for data recovery ========")
             logger.warning("======== Start dumping whitelist enable state for data recovery ========")
-            logger.warning(config.enableWhitelist.toString())
+            logger.warning(whitelist.enabled.toString())
             logger.warning("======== End dumping whitelist enable state for data recovery ========")
             logger.warning("======== Start dumping blacklist enable state for data recovery ========")
-            logger.warning(config.enableBlacklist.toString())
+            logger.warning(blacklist.enabled.toString())
             logger.warning("======== End dumping blacklist enable state for data recovery ========")
             logger.warning("======== Start dumping XBL Web API URL for data recovery ========")
             logger.warning(config.xblWebAPIUrl)
@@ -74,27 +108,29 @@ open class BungeeSafeguard: MetaHolderPlugin() {
         }
     }
 
-    open fun reloadConfig(sender: CommandSender?) {
-        config.reload(sender)
+    open suspend fun reloadConfig(sender: CommandSender?) {
+        config!!.reload(sender)
     }
 
-    open fun reloadUserCache() {
-        userCache.reload()
+    open suspend fun reloadUserCache() {
+        userCache!!.reload()
     }
 
-    open fun loadConfig(sender: CommandSender?) {
+    open suspend fun loadConfig(sender: CommandSender?) {
         config = Config(this)
+        assert(config == null) { "Config object is already initialized" }
         try {
-            config.load(sender)
+            config!!.load(sender)
         } catch (err: IOException) {
-            logger.warning("Unable to read config file \"${config.configInUse}\", please check the config file and if the content of \"${Config.CONFIG_IN_USE}\" is correct")
+            logger.warning("Unable to read config file \"${config!!.configInUse}\", please check the config file and if the content of \"${Config.CONFIG_IN_USE}\" is correct")
         }
     }
 
-    open fun loadUserCache() {
+    open suspend fun loadUserCache() {
+        assert(userCache == null) { "UserCache object is already initialized" }
         userCache = UserCache(this)
         try {
-            userCache.load()
+            userCache!!.load()
         } catch (err: IOException) {
             logger.warning("Unable to read user cache file \"${UserCache.CACHE_FILE}\", please check the user cache file or simply delete it")
         }

@@ -1,5 +1,9 @@
 package vip.untitled.bungeesafeguard
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.config.Configuration
 import net.md_5.bungee.config.ConfigurationProvider
@@ -18,10 +22,20 @@ open class UserCache(val context: Plugin): Map<UUID, List<String>> {
         const val MAX_KNOWN_NAMES = 10
     }
 
+    protected open val mutex = Mutex()
+
+    /**
+     * Lock the entire cache
+     */
+    open suspend fun <T> withLock(owner: Any? = null, action: suspend () -> T): T {
+        mutex.withLock(owner) {
+            return action()
+        }
+    }
+
     /**
      * The user cache YAML object
      */
-    @Volatile
     internal open var cache: Configuration? = null
 
     /**
@@ -47,26 +61,22 @@ open class UserCache(val context: Plugin): Map<UUID, List<String>> {
     override val values: Collection<List<String>>
         get() = map.values
 
-    @Synchronized
     open fun clear() {
         cache?.set(CACHE, null)
         map.clear()
     }
 
-    @Synchronized
-    open fun clearAndSave() {
+    open suspend fun clearAndSave() {
         clear()
         save()
     }
 
-    @Synchronized
     open fun remove(userId: UUID): List<String>? {
         cache?.set("$CACHE.$userId", null)
         return map.remove(userId)
     }
 
-    @Synchronized
-    open fun removeAndSave(userId: UUID): List<String>? {
+    open suspend fun removeAndSave(userId: UUID): List<String>? {
         val names = remove(userId)
         if (names != null) {
             save()
@@ -82,7 +92,6 @@ open class UserCache(val context: Plugin): Map<UUID, List<String>> {
      *
      * @return `true` if the cache is changed
      */
-    @Synchronized
     open fun add(userId: UUID, username: String): Boolean {
         return if (map.contains(userId)) {
             val names = map[userId]!!
@@ -104,8 +113,7 @@ open class UserCache(val context: Plugin): Map<UUID, List<String>> {
         }
     }
 
-    @Synchronized
-    open fun addAndSave(userId: UUID, username: String): Boolean {
+    open suspend fun addAndSave(userId: UUID, username: String): Boolean {
         return if (add(userId, username)) {
             save()
             true
@@ -120,19 +128,21 @@ open class UserCache(val context: Plugin): Map<UUID, List<String>> {
     /**
      * Create new user cache file if it does not exist yet
      */
-    open fun createNewCache() {
+    open suspend fun createNewCache() {
         if (!dataFolder.exists()) {
             dataFolder.mkdirs()
         }
-        File(dataFolder, CACHE_FILE).createNewFile()  // Create only if it does not yet exist
+        withContext(Dispatchers.IO) {
+            File(dataFolder, CACHE_FILE).createNewFile()  // Create only if it does not yet exist
+        }
     }
 
-    open fun reload() {
+    open suspend fun reload() {
         load()
     }
 
     @Synchronized
-    open fun load() {
+    open suspend fun load() {
         val cache: Configuration
         try {
             cache = loadCacheFromFile()
@@ -153,18 +163,21 @@ open class UserCache(val context: Plugin): Map<UUID, List<String>> {
         }
     }
 
-    open fun loadCacheFromFile(): Configuration {
+    open suspend fun loadCacheFromFile(): Configuration {
         createNewCache()
-        return ConfigurationProvider.getProvider(YamlConfiguration::class.java).load(File(dataFolder, CACHE_FILE))
+        return withContext(Dispatchers.IO) {
+            ConfigurationProvider.getProvider(YamlConfiguration::class.java).load(File(dataFolder, CACHE_FILE))
+        }
     }
 
-    @Synchronized
-    open fun save(): Boolean {
+    open suspend fun save(): Boolean {
         if (cache == null) {
             context.logger.warning("Cannot save user cache because it was never successfully loaded")
             return false
         }
-        ConfigurationProvider.getProvider(YamlConfiguration::class.java).save(cache, File(dataFolder, CACHE_FILE))
+        withContext(Dispatchers.IO) {
+            ConfigurationProvider.getProvider(YamlConfiguration::class.java).save(cache, File(dataFolder, CACHE_FILE))
+        }
         return true
     }
 }

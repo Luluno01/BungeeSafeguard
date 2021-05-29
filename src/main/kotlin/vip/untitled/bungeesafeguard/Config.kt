@@ -1,18 +1,26 @@
 package vip.untitled.bungeesafeguard
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
-import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.config.Configuration
 import net.md_5.bungee.config.ConfigurationProvider
 import net.md_5.bungee.config.YamlConfiguration
+import vip.untitled.bungeesafeguard.config.ListManager
+import vip.untitled.bungeesafeguard.config.UUIDList
+import vip.untitled.bungeesafeguard.config.UUIDList.Companion.checkLists
+import vip.untitled.bungeesafeguard.config.UUIDList.Companion.extractList
+import vip.untitled.bungeesafeguard.config.UUIDList.Companion.transformLazyList
+import vip.untitled.bungeesafeguard.config.UUIDList.Companion.transformList
 import vip.untitled.bungeesafeguard.helpers.RedirectedLogger
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import java.util.*
 
-open class Config(val context: Plugin) {
+open class Config(val context: MetaHolderPlugin) {
     companion object {
         const val CONFIG_IN_USE = "config-in-use.txt"
         const val DEFAULT_CONFIG = "config.yml"
@@ -27,7 +35,14 @@ open class Config(val context: Plugin) {
         const val ENABLED_BLACKLIST = "enable-blacklist"
         const val XBL_WEB_API = "xbl-web-api"
         const val CONFIRM = "confirm"
+
+        const val WHITELIST_NAME = "whitelist"
+        const val LAZY_WHITELIST_NAME = "lazy-whitelist"
+        const val BLACKLIST_NAME = "blacklist"
+        const val LAZY_BLACKLIST_NAME = "lazy-blacklist"
     }
+
+    protected open val mutex = Mutex()
 
     /**
      * Name of the config file we are currently using (by default we use "config.yml")
@@ -39,28 +54,9 @@ open class Config(val context: Plugin) {
     internal open lateinit var conf: Configuration
 
     /**
-     * Whitelist (do not access this directly)
+     * The list manager
      */
-    @Volatile
-    internal open lateinit var whitelist: MutableSet<UUID>
-
-    /**
-     * Lazy-whitelist (do not access this directly)
-     */
-    @Volatile
-    internal open lateinit var lazyWhitelist: MutableSet<String>
-
-    /**
-     * Blacklist (do not access this directly)
-     */
-    @Volatile
-    internal open lateinit var blacklist: MutableSet<UUID>
-
-    /**
-     * Lazy-blacklist (do not access this directly)
-     */
-    @Volatile
-    internal open lateinit var lazyBlacklist: MutableSet<String>
+    open val listMgr = ListManager(context)
 
     @Volatile
     open var whitelistMessage: String? = null
@@ -69,58 +65,88 @@ open class Config(val context: Plugin) {
     @Volatile
     open var noUUIDMessage: String? = null
     @Volatile
-    open var enableWhitelist = true
-    @Volatile
-    open var enableBlacklist = false
-    @Volatile
     open var xblWebAPIUrl: String? = null
     @Volatile
     open var confirm: Boolean = false
     protected open val dataFolder: File
         get() = context.dataFolder
 
-    open fun saveDefaultConfig() {
-        if (!dataFolder.exists()) {
-            dataFolder.mkdirs()
+    open suspend fun saveDefaultConfig(name: String = DEFAULT_CONFIG) {
+        withContext(Dispatchers.IO) {
+            if (!dataFolder.exists()) {
+                dataFolder.mkdirs()
+            }
         }
-        val conf = File(dataFolder, DEFAULT_CONFIG)
-        if (!conf.exists()) {
-            context.getResourceAsStream(DEFAULT_CONFIG).use { `in` -> Files.copy(`in`, File(dataFolder, DEFAULT_CONFIG).toPath()) }
+        val conf = File(dataFolder, name)
+        withContext(Dispatchers.IO) {
+            if (!conf.exists()) {
+                context.getResourceAsStream(DEFAULT_CONFIG).use { `in` -> Files.copy(`in`, conf.toPath()) }
+            }
         }
     }
 
-    open fun reload(sender: CommandSender?, configName: String? = null) {
+    /**
+     * Lock the entire config
+     */
+    open suspend fun <T> withLock(owner: Any? = null, action: suspend () -> T): T {
+        mutex.withLock(owner) {
+            return action()
+        }
+    }
+
+    open val whitelist: UUIDList
+        get() {
+            return listMgr.forName(WHITELIST_NAME) ?: throw IllegalStateException("Lists are not yet initialized")
+        }
+
+    open val blacklist: UUIDList
+        get() {
+            return listMgr.forName(BLACKLIST_NAME) ?: throw IllegalStateException("Lists are not yet initialized")
+        }
+
+    /**
+     * Reload the config
+     */
+    open suspend fun reload(sender: CommandSender?, configName: String? = null) {
         load(sender, configName)
     }
 
+    /**
+     * Load the config
+     */
     @Synchronized
-    open fun load(sender: CommandSender?, configName: String? = null) {
-        saveDefaultConfig()
+    open suspend fun load(sender: CommandSender?, configName: String? = null) {
         configInUse = configName ?: loadConfigInUse(sender)
+        assert(configInUse.endsWith(".yml")) { "Config must be a YAML file, got file name \"$configInUse\"" }
+        saveDefaultConfig(configInUse)
         val logger = RedirectedLogger.get(context, sender)
         logger.info("Using config file ${ChatColor.AQUA}$configInUse")
         conf = loadConfigFromFile(configInUse, sender)
-        whitelist = extractWhitelist(conf)
-        lazyWhitelist = extractLazyWhitelist(conf)
-        blacklist = extractBlacklist(conf)
-        lazyBlacklist = extractLazyBlacklist(conf)
-        checkWhitelistAndBlacklist(sender, whitelist, blacklist)
-        checkLazyWhitelistAndLazyBlacklist(sender, lazyWhitelist, lazyBlacklist)
-        logger.info("${ChatColor.AQUA}${whitelist.size} ${ChatColor.GREEN}whitelist record(s) loaded")
-        logger.info("${ChatColor.AQUA}${lazyWhitelist.size} ${ChatColor.GREEN}lazy-whitelist record(s) loaded")
-        logger.info("${ChatColor.AQUA}${blacklist.size} ${ChatColor.GREEN}blacklist record(s) loaded")
-        logger.info("${ChatColor.AQUA}${lazyBlacklist.size} ${ChatColor.GREEN}lazy-blacklist record(s) loaded")
+        val rawWhitelist = extractList(conf, WHITELIST) { transformList(it) }
+        val lazyWhitelist = extractList(conf, LAZY_WHITELIST) { transformLazyList(it) }
+        val rawBlacklist = extractList(conf, BLACKLIST) { transformList(it) }
+        val lazyBlacklist = extractList(conf, LAZY_BLACKLIST) { transformLazyList(it) }
         whitelistMessage = if (conf.contains(WHITELIST_MESSAGE)) conf.getString(WHITELIST_MESSAGE) else null
         blacklistMessage = if (conf.contains(BLACKLIST_MESSAGE)) conf.getString(BLACKLIST_MESSAGE) else null
-        noUUIDMessage = if (conf.contains(NO_UUID_MESSAGE)) conf.getString(NO_UUID_MESSAGE) else null
-        enableWhitelist = if (conf.contains(ENABLED_WHITELIST)) conf.getBoolean(ENABLED_WHITELIST) else true
-        enableBlacklist = if (conf.contains(ENABLED_BLACKLIST)) conf.getBoolean(ENABLED_BLACKLIST) else false
-        logger.info("${ChatColor.GREEN}Whitelist ${if (enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}")
-        logger.info("${ChatColor.GREEN}Blacklist ${if (enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}")
-        if (enableWhitelist == enableBlacklist) {
-            if (enableWhitelist) logger.warning("Both blacklist and whitelist are enabled, blacklist will have a higher priority should a player is in both lists")
-            else logger.warning("Both blacklist and whitelist are disabled, BungeeSafeguard will not block any player")
+        val enableWhitelist = if (conf.contains(ENABLED_WHITELIST)) conf.getBoolean(ENABLED_WHITELIST) else true
+        val enableBlacklist = if (conf.contains(ENABLED_BLACKLIST)) conf.getBoolean(ENABLED_BLACKLIST) else false
+        listMgr.load(BLACKLIST_NAME, LAZY_BLACKLIST_NAME, rawBlacklist, lazyBlacklist, blacklistMessage, UUIDList.Companion.Behavior.KICK_MATCHED, enableBlacklist)
+        listMgr.load(WHITELIST_NAME, LAZY_WHITELIST_NAME, rawWhitelist, lazyWhitelist, whitelistMessage, UUIDList.Companion.Behavior.KICK_NOT_MATCHED, enableWhitelist)
+        val lists = listMgr.lists
+        checkLists(context, sender, lists, { it.list }, { it.name })
+        checkLists(context, sender, lists, { it.lazyList }, { it.lazyName })
+        var enabledListsNum = 0
+        for (list in lists) {
+            logger.info("${ChatColor.GREEN}${list.name.capitalize()} ${if (list.enabled) "ENABLED" else "${ChatColor.RED}DISABLED"}")
+            logger.info("${ChatColor.AQUA}${list.list.size} ${ChatColor.GREEN}${list.name} record(s) loaded")
+            logger.info("${ChatColor.AQUA}${list.lazyList.size} ${ChatColor.GREEN}${list.lazyName} record(s) loaded")
+            if (list.enabled) enabledListsNum++
         }
+        when {
+            enabledListsNum == 0 -> logger.warning("All lists are disabled, BungeeSafeguard will not block any player")
+            enabledListsNum > 1 -> logger.warning("Multiple lists are enabled (priorities: ${lists.joinToString("> ") { it.name }})")
+        }
+        noUUIDMessage = if (conf.contains(NO_UUID_MESSAGE)) conf.getString(NO_UUID_MESSAGE) else null
         xblWebAPIUrl = if (conf.contains(XBL_WEB_API)) conf.getString(XBL_WEB_API) else null
         confirm = if (conf.contains(CONFIRM)) conf.getBoolean(CONFIRM) else false
     }
@@ -128,199 +154,68 @@ open class Config(val context: Plugin) {
     /**
      * Load the name of the config in use
      */
-    open fun loadConfigInUse(sender: CommandSender?): String {
+    protected open suspend fun loadConfigInUse(sender: CommandSender?): String {
         val logger = RedirectedLogger.get(context, sender)
         val inUseFile = File(dataFolder, CONFIG_IN_USE)
-        return if (inUseFile.exists() && inUseFile.isFile) {
-            try {
-                val name = inUseFile.readText().trim()
-                val confFile = File(dataFolder, name)
-                if (confFile.exists() && confFile.isFile) {
-                    name
-                } else {
-                    logger.warning("Specified file \"$name\" does not exist, fallback to the default config \"$DEFAULT_CONFIG\"")
+        return withContext(Dispatchers.IO) {
+            if (inUseFile.exists() && inUseFile.isFile) {
+                try {
+                    val name = inUseFile.readText().trim()
+                    val confFile = File(dataFolder, name)
+                    if (confFile.exists() && confFile.isFile) {
+                        name
+                    } else {
+                        logger.warning("Specified file \"$name\" does not exist, fallback to the default config \"$DEFAULT_CONFIG\"")
+                        DEFAULT_CONFIG
+                    }
+                } catch (err: IOException) {
+                    logger.warning("Cannot read \"$CONFIG_IN_USE\", fallback to the default config \"$DEFAULT_CONFIG\"")
                     DEFAULT_CONFIG
                 }
-            } catch (err: IOException) {
-                logger.warning("Cannot read \"$CONFIG_IN_USE\", fallback to the default config \"$DEFAULT_CONFIG\"")
+            } else {
+                logger.warning("File \"$CONFIG_IN_USE\" not found, fallback to the default config \"$DEFAULT_CONFIG\"")
                 DEFAULT_CONFIG
             }
-        } else {
-            logger.warning("File \"$CONFIG_IN_USE\" not found, fallback to the default config \"$DEFAULT_CONFIG\"")
-            DEFAULT_CONFIG
         }
     }
 
-    open fun loadConfigFromFile(configName: String = DEFAULT_CONFIG, sender: CommandSender?): Configuration {
+    protected open suspend fun loadConfigFromFile(configName: String = DEFAULT_CONFIG, sender: CommandSender?): Configuration {
         val logger = RedirectedLogger.get(context, sender)
         val configFile = File(dataFolder, configName)
-        if (configFile.createNewFile()) {
-            logger.info("${ChatColor.AQUA}configName${ChatColor.RESET} does not exist, created an empty one")
-        }
-        return ConfigurationProvider.getProvider(YamlConfiguration::class.java).load(File(dataFolder, configName))
-    }
-
-    @Synchronized
-    open fun save() {
-        conf.set(WHITELIST, whitelist.map { it.toString() }.toTypedArray())
-        conf.set(LAZY_WHITELIST, lazyWhitelist.toTypedArray())
-        conf.set(BLACKLIST, blacklist.map { it.toString() }.toTypedArray())
-        conf.set(LAZY_BLACKLIST, lazyBlacklist.toTypedArray())
-        conf.set(ENABLED_WHITELIST, enableWhitelist)
-        conf.set(ENABLED_BLACKLIST, enableBlacklist)
-        conf.set(CONFIRM, confirm)
-        ConfigurationProvider.getProvider(YamlConfiguration::class.java).save(conf, File(dataFolder, configInUse))
-    }
-
-    @Synchronized
-    open fun inWhitelist(id: UUID): Boolean {
-        return whitelist.contains(id)
-    }
-
-    @Synchronized
-    open fun inLazyWhitelist(username: String): Boolean {
-        return lazyWhitelist.contains(username)
-    }
-
-    @Synchronized
-    open fun addWhitelistRecord(record: UUID): Boolean {
-        return whitelist.add(record)
-    }
-
-    @Synchronized
-    open fun addLazyWhitelistRecord(record: String): Boolean {
-        return lazyWhitelist.add(record)
-    }
-
-    @Synchronized
-    open fun removeWhitelistRecord(record: UUID): Boolean {
-        return whitelist.remove(record)
-    }
-
-    @Synchronized
-    open fun removeLazyWhitelistRecord(record: String): Boolean {
-        return lazyWhitelist.remove(record)
-    }
-
-    @Synchronized
-    open fun inBlacklist(id: UUID): Boolean {
-        return blacklist.contains(id)
-    }
-
-    @Synchronized
-    open fun inLazyBlacklist(username: String): Boolean {
-        return lazyBlacklist.contains(username)
-    }
-
-    @Synchronized
-    open fun addBlacklistRecord(record: UUID): Boolean {
-        return blacklist.add(record)
-    }
-
-    @Synchronized
-    open fun addLazyBlacklistRecord(record: String): Boolean {
-        return lazyBlacklist.add(record)
-    }
-
-    @Synchronized
-    open fun removeBlacklistRecord(record: UUID): Boolean {
-        return blacklist.remove(record)
-    }
-
-    @Synchronized
-    open fun removeLazyBlacklistRecord(record: String): Boolean {
-        return lazyBlacklist.remove(record)
-    }
-
-    /**
-     * Move record from lazy-whitelist to whitelist if any
-     * @param username Username
-     * @param uuid UUID of the player
-     * @return If the player is in lazy-whitelist
-     */
-    @Synchronized
-    open fun moveToWhitelistIfInLazyWhitelist(username: String, uuid: UUID): Boolean {
-        return if (inLazyWhitelist(username)) {
-            removeLazyWhitelistRecord(username)
-            addWhitelistRecord(uuid)
-            true
-        } else {
-            false
+        return withContext(Dispatchers.IO) {
+            if (configFile.createNewFile()) {
+                logger.info("${ChatColor.AQUA}configName${ChatColor.RESET} does not exist, created an empty one")
+            }
+            ConfigurationProvider.getProvider(YamlConfiguration::class.java)
+                .load(File(dataFolder, configName))
         }
     }
 
     /**
-     * Move record from lazy-blacklist to blacklist if any
-     * @param username Username
-     * @param uuid UUID of the player
-     * @return If the player is in lazy-blacklist
+     * Save the config to the underlying file
      */
     @Synchronized
-    open fun moveToBlacklistIfInLazyBlacklist(username: String, uuid: UUID): Boolean {
-        return if (inLazyBlacklist(username)) {
-            removeLazyBlacklistRecord(username)
-            addBlacklistRecord(uuid)
-            true
-        } else {
-            false
-        }
-    }
-
-    @Synchronized
-    open fun setWhitelistEnabled(enabled: Boolean) {
-        enableWhitelist = enabled
-    }
-
-    @Synchronized
-    open fun setBlacklistEnabled(enabled: Boolean) {
-        enableBlacklist = enabled
-    }
-
-    open fun checkWhitelistAndBlacklist(sender: CommandSender?, whitelist: Set<UUID>, blacklist: Set<UUID>) {
-        val logger = RedirectedLogger.get(context, sender)
-        val both = whitelist.intersect(blacklist)
-        if (both.isNotEmpty()) {
-            logger.warning("The following UUID(s) present(s) in both whitelist and blacklist:")
-            for (uuid in both) {
-                logger.warning("  ${ChatColor.AQUA}${uuid}")
+    open suspend fun save() {
+        withLock {
+            val mWhitelist = whitelist
+            val mBlacklist = blacklist
+            val rawWhitelist = mWhitelist.list
+            val lazyWhitelist = mWhitelist.lazyList
+            val enableWhitelist = mWhitelist.enabled
+            val rawBlacklist = mBlacklist.list
+            val lazyBlacklist = mBlacklist.lazyList
+            val enableBlacklist = mBlacklist.enabled
+            conf.set(WHITELIST, rawWhitelist.map { it.toString() }.toTypedArray())
+            conf.set(LAZY_WHITELIST, lazyWhitelist.toTypedArray())
+            conf.set(BLACKLIST, rawBlacklist.map { it.toString() }.toTypedArray())
+            conf.set(LAZY_BLACKLIST, lazyBlacklist.toTypedArray())
+            conf.set(ENABLED_WHITELIST, enableWhitelist)
+            conf.set(ENABLED_BLACKLIST, enableBlacklist)
+            conf.set(CONFIRM, confirm)
+            withContext(Dispatchers.IO) {
+                ConfigurationProvider.getProvider(YamlConfiguration::class.java)
+                    .save(conf, File(dataFolder, configInUse))
             }
-            logger.warning("Note that blacklist has higher priority")
         }
-    }
-
-    open fun checkLazyWhitelistAndLazyBlacklist(sender: CommandSender?, lazyWhitelist: Set<String>, lazyBlacklist: Set<String>) {
-        val logger = RedirectedLogger.get(context, sender)
-        val both = lazyWhitelist.intersect(lazyBlacklist)
-        if (both.isNotEmpty()) {
-            logger.warning("The following username(s) present(s) in both lazy-whitelist and lazy-blacklist:")
-            for (username in both) {
-                logger.warning("  ${ChatColor.AQUA}${username}")
-            }
-            logger.warning("Note that blacklist has higher priority")
-        }
-    }
-
-    open fun extractWhitelist(configuration: Configuration): MutableSet<UUID> {
-        return if (configuration.contains(WHITELIST)) {
-            configuration.getStringList(WHITELIST).map { UUID.fromString(it) }.toMutableSet()
-        } else mutableSetOf()
-    }
-
-    open fun extractLazyWhitelist(configuration: Configuration): MutableSet<String> {
-        return if (configuration.contains(LAZY_WHITELIST)) {
-            return configuration.getStringList(LAZY_WHITELIST).filterNot { it.isBlank() }.toMutableSet()
-        } else mutableSetOf()
-    }
-
-    open fun extractBlacklist(configuration: Configuration): MutableSet<UUID> {
-        return if (configuration.contains(BLACKLIST)) {
-            configuration.getStringList(BLACKLIST).map { UUID.fromString(it) }.toMutableSet()
-        } else mutableSetOf()
-    }
-
-    open fun extractLazyBlacklist(configuration: Configuration): MutableSet<String> {
-        return if (configuration.contains(LAZY_BLACKLIST)) {
-            return configuration.getStringList(LAZY_BLACKLIST).filterNot { it.isBlank() }.toMutableSet()
-        } else mutableSetOf()
     }
 }

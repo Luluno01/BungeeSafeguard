@@ -3,6 +3,9 @@ package vip.untitled.bungeesafeguard.helpers
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class TypedJSON(val json: JsonElement) {
@@ -13,6 +16,12 @@ open class TypedJSON(val json: JsonElement) {
                 TypedJSON(JsonParser.parseString(str))
             } catch (err: NoSuchMethodError) {
                 TypedJSON(JsonParser().parse(str))
+            }
+        }
+
+        suspend fun fromFile(file: File): TypedJSON {
+            return withContext(Dispatchers.IO) {
+                fromString(file.readText())
             }
         }
     }

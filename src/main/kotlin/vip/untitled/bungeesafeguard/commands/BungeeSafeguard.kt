@@ -1,5 +1,8 @@
 package vip.untitled.bungeesafeguard.commands
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
@@ -9,7 +12,6 @@ import vip.untitled.bungeesafeguard.MetaHolderPlugin
 import vip.untitled.bungeesafeguard.helpers.ListDumper
 import java.io.File
 import java.io.IOException
-import java.util.*
 
 open class BungeeSafeguard(val context: MetaHolderPlugin): Command("bungeesafeguard", "bungeesafeguard.main", "bsg") {
     open fun sendUsage(sender: CommandSender) {
@@ -23,7 +25,7 @@ open class BungeeSafeguard(val context: MetaHolderPlugin): Command("bungeesafegu
     /**
      * Handle subcommand load/use
      */
-    protected open fun handleLoad(sender: CommandSender, args: Array<out String>) {
+    protected open suspend fun handleLoad(sender: CommandSender, args: Array<out String>) {
         if (args.size < 2) {
             sendUsage(sender)
             return
@@ -38,21 +40,19 @@ open class BungeeSafeguard(val context: MetaHolderPlugin): Command("bungeesafegu
         /* End safety check */
 
         if (!name.endsWith(".yml")) name += ".yml"
-        val config = context.config
-        context.proxy.scheduler.runAsync(context) {
-            synchronized (config) {
-                val configInUseFile = File(context.dataFolder, Config.CONFIG_IN_USE)
-                try {
-                    configInUseFile.writeText(name)
-                } catch (err: IOException) {
-                    sender.sendMessage(TextComponent("${ChatColor.RED}Failed to update file \"${Config.CONFIG_IN_USE}\", aborting"))
-                    return@runAsync
-                }
-                try {
-                    config.reload(sender, name)
-                } catch (err: Throwable) {
-                    sender.sendMessage(TextComponent("${ChatColor.RED}Failed to load config file \"$name\""))
-                }
+        val config = context.config!!
+        val configInUseFile = File(context.dataFolder, Config.CONFIG_IN_USE)
+        config.withLock {
+            try {
+                withContext(Dispatchers.IO) { configInUseFile.writeText(name) }
+            } catch (err: IOException) {
+                sender.sendMessage(TextComponent("${ChatColor.RED}Failed to update file \"${Config.CONFIG_IN_USE}\", aborting"))
+                return@withLock
+            }
+            try {
+                config.reload(sender, name)
+            } catch (err: Throwable) {
+                sender.sendMessage(TextComponent("${ChatColor.RED}Failed to load config file \"$name\""))
             }
         }
     }
@@ -60,42 +60,49 @@ open class BungeeSafeguard(val context: MetaHolderPlugin): Command("bungeesafegu
     /**
      * Handle subcommand reload
      */
-    protected open fun handleReload(sender: CommandSender, args: Array<out String>) {
-        context.proxy.scheduler.runAsync(context) {
+    protected open suspend fun handleReload(sender: CommandSender, args: Array<out String>) {
+        val config = context.config!!
+        config.withLock {
             try {
-                context.config.reload(sender)
+                config.reload(sender)
                 sender.sendMessage(TextComponent("${ChatColor.GREEN}BungeeSafeguard reloaded"))
-            } catch (e: Throwable) {
-                sender.sendMessage(TextComponent("${ChatColor.RED}Failed to reload: $e"))
+            } catch (err: Throwable) {
+                sender.sendMessage(TextComponent("${ChatColor.RED}Failed to reload: $err"))
             }
-            context.userCache.reload()
+        }
+        val cache = context.userCache!!
+        cache.withLock {
+            cache.reload()
         }
     }
 
     /**
      * Handle subcommand status
      */
-    protected open fun handleStatus(sender: CommandSender, args: Array<out String>) {
-        val config = context.config
-        synchronized (config) {
+    protected open suspend fun handleStatus(sender: CommandSender, args: Array<out String>) {
+        val config = context.config!!
+        config.withLock {
             sender.sendMessage(TextComponent("${ChatColor.GREEN}Using config file ${ChatColor.AQUA}${config.configInUse}"))
-            sender.sendMessage(TextComponent("${ChatColor.GREEN}Whitelist ${if (config.enableWhitelist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
-            sender.sendMessage(TextComponent("${ChatColor.GREEN}Blacklist ${if (config.enableBlacklist) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
+            for (list in config.listMgr.lists) {
+                sender.sendMessage(TextComponent("${ChatColor.GREEN}${list.name.capitalize()} ${if (list.enabled) "ENABLED" else "${ChatColor.RED}DISABLED"}"))
+            }
         }
     }
 
     /**
      * Handle subcommand dump
      */
-    protected open fun handleDump(sender: CommandSender, args: Array<out String>) {
-        val config = context.config
-        synchronized (config) {
-            val cache = context.userCache
+    protected open suspend fun handleDump(sender: CommandSender, args: Array<out String>) {
+        val config = context.config!!
+        config.withLock {
+            val cache = context.userCache!!
             sender.sendMessage(TextComponent("${ChatColor.GREEN}Using config file ${ChatColor.AQUA}${config.configInUse}"))
-            ListDumper.printListStatus(sender, "Whitelist", config.enableWhitelist)
-            ListDumper.printListsContent(sender, config.lazyWhitelist, config.whitelist, cache)
-            ListDumper.printListStatus(sender, "Blacklist", config.enableBlacklist)
-            ListDumper.printListsContent(sender, config.lazyBlacklist, config.blacklist, cache)
+            cache.withLock {
+                for (list in config.listMgr.lists) {
+                    ListDumper.printListStatus(sender, list.name.capitalize(), list.enabled)
+                    ListDumper.printListsContent(sender, list.lazyList, list.list, cache)
+                }
+            }
         }
     }
 
@@ -106,10 +113,10 @@ open class BungeeSafeguard(val context: MetaHolderPlugin): Command("bungeesafegu
         }
         // This class is an exception that can access `config.*list` directly
         when (args[0]) {
-            "load", "use" -> handleLoad(sender, args)
-            "reload" -> handleReload(sender, args)
-            "status" -> handleStatus(sender, args)
-            "dump" -> handleDump(sender, args)
+            "load", "use" -> runBlocking { handleLoad(sender, args) }
+            "reload" -> runBlocking { handleReload(sender, args) }
+            "status" -> runBlocking { handleStatus(sender, args) }
+            "dump" -> runBlocking { handleDump(sender, args) }
             else -> sendUsage(sender)
         }
     }

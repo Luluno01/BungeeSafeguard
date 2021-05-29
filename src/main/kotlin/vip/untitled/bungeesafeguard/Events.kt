@@ -1,5 +1,8 @@
 package vip.untitled.bungeesafeguard
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.event.LoginEvent
@@ -7,53 +10,14 @@ import net.md_5.bungee.api.event.PostLoginEvent
 import net.md_5.bungee.api.event.ServerConnectEvent
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.event.EventHandler
+import vip.untitled.bungeesafeguard.config.UUIDList
 import java.util.*
 
 open class Events(val context: MetaHolderPlugin): Listener {
     protected val config: Config
-        get() = context.config
-    protected val whitelistMessage: String
-        get() = config.whitelistMessage ?: ""
-    protected val blacklistMessage: String
-        get() = config.blacklistMessage ?: ""
-    protected val noUUIDMessage: String
-        get() = config.noUUIDMessage ?: ""
-    protected val enableWhitelist: Boolean
-        get() = config.enableWhitelist
-    protected val enableBlacklist: Boolean
-        get() = config.enableBlacklist
-
-    /**
-     * Determine whether we should kick a player
-     *
-     * @param username Username
-     * @param id User's UUID
-     */
-    open fun shouldKick(username: String, id: UUID): KickReason {
-        var shouldSaveConfig = false
-        if (config.moveToWhitelistIfInLazyWhitelist(username, id)) {
-            shouldSaveConfig = true
-            context.logger.info("${ChatColor.DARK_GREEN}Move player from lazy-whitelist to whitelist ${ChatColor.AQUA}(${username} => ${id})")
-        }
-        if (config.moveToBlacklistIfInLazyBlacklist(username, id)) {
-            shouldSaveConfig = true
-            context.logger.info("${ChatColor.DARK_PURPLE}Move player from lazy-blacklist to blacklist ${ChatColor.AQUA}(${username} => ${id})")
-        }
-        if (shouldSaveConfig) {
-            context.proxy.scheduler.runAsync(context) {
-                synchronized(config) {
-                    config.save()
-                }
-            }
-        }
-        if (enableBlacklist && config.inBlacklist(id)) {
-            return KickReason.BLACKLISTED
-        }
-        if (enableWhitelist && !config.inWhitelist(id)) {
-            return KickReason.NOT_WHITELISTED
-        }
-        return KickReason.DO_NOT_KICK
-    }
+        get() = context.config!!
+    protected val userCache: UserCache
+        get() = context.userCache!!
 
     /**
      * Update user cache
@@ -66,9 +30,9 @@ open class Events(val context: MetaHolderPlugin): Listener {
      * @param id User's UUID
      * @param username Username
      */
-    open fun updateUserCache(id: UUID, username: String) {
-        val cache = context.userCache
-        if (config.inWhitelist(id) || config.inBlacklist(id)) {
+    open suspend fun updateUserCache(id: UUID, username: String) {
+        val cache = userCache
+        if (config.listMgr.inAnyList(id)) {
             cache.addAndSave(id, username)
         } else if (cache.contains(id)) {
             // Somehow this user is in the cache
@@ -76,23 +40,56 @@ open class Events(val context: MetaHolderPlugin): Listener {
         }
     }
 
+    /**
+     * Lock config and user cache, and then update user cache asynchronously
+     *
+     * We only care about the usernames of users in the whitelist or the blacklist
+     *
+     * This should be called AFTER `shouldKick`, who might update the two lists,
+     * because this method will check if the user is in one of the two lists
+     *
+     * @param id User's UUID
+     * @param username Username
+     */
+    open fun updateUserCacheAsync(id: UUID, username: String) = GlobalScope.launch {
+        config.withLock {
+            userCache.withLock {
+                updateUserCache(id, username)
+            }
+        }
+    }
+
+    protected open fun logKick(username: String, id: UUID, kicker: UUIDList) {
+        when (kicker.behavior) {
+            UUIDList.Companion.Behavior.KICK_NOT_MATCHED -> context.logger.info("Player ${ChatColor.AQUA}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked for not being in the ${kicker.name}")
+            UUIDList.Companion.Behavior.KICK_MATCHED -> context.logger.info("Player ${ChatColor.RED}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked for being in the ${kicker.name}")
+        }
+    }
+
+    protected open fun possiblyKick(username: String, id: UUID, doKick: (UUIDList) -> Unit) {
+        val config = config
+        runBlocking {
+            config.withLock {
+                when (val kicker = config.listMgr.shouldKick(username, id)) {
+                    null -> {}
+                    else -> {
+                        doKick(kicker)
+                        logKick(username, id, kicker)
+                    }
+                }
+            }
+        }
+        updateUserCacheAsync(id, username)
+    }
+
     @EventHandler
     open fun onPostLogin(event: PostLoginEvent) {
         val player = event.player
         val username = player.name
         val id = player.uniqueId
-        when (shouldKick(username, id)) {
-            KickReason.DO_NOT_KICK -> {}
-            KickReason.BLACKLISTED -> {
-                player.disconnect(TextComponent(blacklistMessage))
-                context.logger.info("Banned player ${ChatColor.RED}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked!")
-            }
-            KickReason.NOT_WHITELISTED -> {
-                player.disconnect(TextComponent(whitelistMessage))
-                context.logger.info("Non-whitelisted player ${ChatColor.AQUA}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked!")
-            }
+        possiblyKick(username, id) {
+            player.disconnect(TextComponent(it.message ?: ""))
         }
-        updateUserCache(id, username)
     }
 
     @EventHandler
@@ -101,25 +98,15 @@ open class Events(val context: MetaHolderPlugin): Listener {
         val username = connection.name
         val id = connection.uniqueId
         if (id == null) {
-            event.setCancelReason(TextComponent(noUUIDMessage))
+            event.setCancelReason(TextComponent(config.noUUIDMessage ?: ""))
             event.isCancelled = true
             context.logger.info("${ChatColor.YELLOW}Player ${ChatColor.RED}${username} ${ChatColor.YELLOW}has no UUID, blocked for safety")
             return
         }
-        when (shouldKick(username, id)) {
-            KickReason.DO_NOT_KICK -> {}
-            KickReason.BLACKLISTED -> {
-                event.setCancelReason(TextComponent(blacklistMessage))
-                event.isCancelled = true
-                context.logger.info("Banned player ${ChatColor.RED}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked from logging in!")
-            }
-            KickReason.NOT_WHITELISTED -> {
-                event.setCancelReason(TextComponent(whitelistMessage))
-                event.isCancelled = true
-                context.logger.info("Non-whitelisted player ${ChatColor.AQUA}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked from logging in!")
-            }
+        possiblyKick(username, id) {
+            event.setCancelReason(TextComponent(it.message ?: ""))
+            event.isCancelled = true
         }
-        updateUserCache(id, username)
     }
 
     @EventHandler
@@ -127,19 +114,9 @@ open class Events(val context: MetaHolderPlugin): Listener {
         val player = event.player
         val username = player.name
         val id = player.uniqueId
-        when (shouldKick(username, id)) {
-            KickReason.DO_NOT_KICK -> {}
-            KickReason.BLACKLISTED -> {
-                event.isCancelled = true
-                player.disconnect(TextComponent(blacklistMessage))
-                context.logger.info("Banned player ${ChatColor.RED}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked from connecting to server ${ChatColor.GREEN}${event.target.name}!")
-            }
-            KickReason.NOT_WHITELISTED -> {
-                event.isCancelled = true
-                player.disconnect(TextComponent(whitelistMessage))
-                context.logger.info("Non-whitelisted player ${ChatColor.AQUA}${username} ${ChatColor.BLUE}(${id})${ChatColor.RESET} blocked from connecting to server ${ChatColor.GREEN}${event.target.name}!")
-            }
+        possiblyKick(username, id) {
+            event.isCancelled = true
+            player.disconnect(TextComponent(it.message ?: ""))
         }
-        updateUserCache(id, username)
     }
 }

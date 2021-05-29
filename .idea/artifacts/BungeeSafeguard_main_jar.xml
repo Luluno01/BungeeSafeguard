@@ -1,13 +1,24 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="BungeeSafeguard.main:jar">
+  <artifact type="jar" build-on-make="true" name="BungeeSafeguard.main:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/BungeeSafeguard_main_jar</output-path>
     <root id="archive" name="BungeeSafeguard.main.jar">
       <element id="module-output" name="BungeeSafeguard.main" />
-      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.4.32/3302f9ec8a5c1ed220781dbd37770072549bd333/kotlin-stdlib-jdk8-1.4.32.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-core-jvm/1.5.3/49e763e2160be29be031e2c1fb888c5ce5bd65d6/ktor-client-core-jvm-1.5.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-utils-jvm/1.5.3/dbdd7b90a445e1c7ae248b6549c221dbf8d27651/ktor-utils-jvm-1.5.3.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.4.32/ef50bfa2c0491a11dcc35d9822edbfd6170e1ea2/kotlin-stdlib-common-1.4.32.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.4.32/3302f9ec8a5c1ed220781dbd37770072549bd333/kotlin-stdlib-jdk8-1.4.32.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.4.32/3546900a3ebff0c43f31190baf87a9220e37b7ea/kotlin-stdlib-jdk7-1.4.32.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-network-jvm/1.5.3/84baa7cc3b370e47a69de83d7b33f02972614a2a/ktor-network-jvm-1.5.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-client-cio-jvm/1.5.3/8b4867b0fdf8258f57e2b46524bad17f29a04531/ktor-client-cio-jvm-1.5.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.30/b5a4b6d16ab13e34a88fae84c35cd5d68cac922c/slf4j-api-1.7.30.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-http-jvm/1.5.3/f2a0fe59aa872db562746880f27b493f7bff4fa7/ktor-http-jvm-1.5.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-http-cio-jvm/1.5.3/57deb2da2962c89baf7dceb17a7383d970a50281/ktor-http-cio-jvm-1.5.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.4.3/1051e11eb789ed1df93412bebe0f06e9d29160e4/kotlinx-coroutines-core-jvm-1.4.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-network-tls-jvm/1.5.3/106b586b539f187cfe555fb2868d989fcf1a622d/ktor-network-tls-jvm-1.5.3.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.4.32/461367948840adbb0839c51d91ed74ef4a9ccb52/kotlin-stdlib-1.4.32.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.ktor/ktor-io-jvm/1.5.3/12830f733943a59807770799c0394624749ba649/ktor-io-jvm-1.5.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.8.6/9180733b7df8542621dc12e21e87557e8c99b8cb/gson-2.8.6.jar" path-in-jar="/" />
       <element id="file-copy" path="$PROJECT_DIR$/src/main/resources/config.yml" />
       <element id="file-copy" path="$PROJECT_DIR$/src/main/resources/plugin.yml" />
     </root>
