@@ -1,0 +1,4 @@
+name: BungeeSafeguard
+main: cyou.untitled.bungeesafeguard.BungeeSafeguardImpl
+version: "3.0"
+author: Untitled

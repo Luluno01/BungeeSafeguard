@@ -1,0 +1,30 @@
+#########################################
+#     BungeeSafeguard Configuration     #
+#            Version: 3.0               #
+#          Author: Untitled             #
+#########################################
+
+version: "3.0"
+whitelist-message: :( You are not whitelisted on this server
+blacklist-message: :( We can't let you enter this server
+no-uuid-message: :( Name yourself
+enable-whitelist: true
+# lazy-whitelist:
+# - <lazy-whitelisted username, will be translated into UUID and moved to
+#   whitelist>
+lazy-whitelist:
+# whitelist:
+# - <whitelisted UUID>
+whitelist:
+enable-blacklist: false
+# lazy-blacklist:
+# - <lazy-blacklisted username, will be translated into UUID and moved to
+#   blacklist>
+lazy-blacklist:
+# blacklist:
+# - <banned UUID>
+blacklist:
+# xbl-web-api: <a deployment of https://github.com/Prouser123/xbl-web-api>
+xbl-web-api: https://xbl-api.prouser123.me
+# confirm: <should request confirmation for add/remove operation?>
+confirm: false
