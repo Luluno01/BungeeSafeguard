@@ -12,6 +12,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.ChatColor
+import org.bstats.bungeecord.Metrics
 import java.io.File
 import cyou.untitled.bungeesafeguard.commands.BungeeSafeguard as BSGCmd
 
@@ -88,6 +89,8 @@ class BungeeSafeguardImpl: BungeeSafeguard() {
             "bungeesafeguard.blacklist", "blist"
         )
         proxy.pluginManager.registerCommand(this, blacklistCommand)
+
+        Metrics(this, 11845)
 
         exposeInst()
         logger.info("${ChatColor.GREEN}BungeeSafeguard enabled")
