@@ -114,9 +114,15 @@ Note that you need to specify an [`xbl-web-api`](https://github.com/Prouser123/x
 
 ## Replaceable Storage Backend for Lists
 
-TODO: what and some implementations available
+Start from v3.0, BungeeSafeguard supports custom storage backend for the lists. That is, you can store the list records in the config file, the database, or wherever you want.
+The use case of custom storage backend is when you have really large lists, or when you want to share lists among multiple networks, you will want a non-toy, dedicated, professional backend.
+
+TODO: some implementations available
 
 ## Optional Extension Plugins
+
+Start from v3.0, BungeeSafeguard exposes a handful of APIs for third-party plugins to manipulate the lists or register custom backend.
+For example, you can now implement a standalone plugin that programmatically whitelist or blacklist someone; or a plugin that wraps BungeeSafeguard APIs and exposes them as RESTful API.
 
 TODO: some implementations available
 
