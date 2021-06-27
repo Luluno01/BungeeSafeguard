@@ -7,7 +7,6 @@ import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
 import cyou.untitled.bungeesafeguard.list.joinLazyListName
 import cyou.untitled.bungeesafeguard.list.joinListName
-import io.ktor.client.*
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
@@ -16,7 +15,6 @@ import java.util.*
 abstract class Base(
     context: BungeeSafeguard,
     name: ListCommand.Companion.SubcommandName,
-    protected val client: HttpClient,
     protected val listMgr: ListManager,
     protected val list: UUIDList,
     val confirmable: Boolean = true

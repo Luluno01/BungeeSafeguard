@@ -8,8 +8,6 @@ import cyou.untitled.bungeesafeguard.list.UUIDList
 import cyou.untitled.bungeesafeguard.storage.Backend
 import cyou.untitled.bungeesafeguard.storage.CachedBackend
 import cyou.untitled.bungeesafeguard.storage.ConfigBackend
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -78,19 +76,16 @@ class BungeeSafeguardImpl: BungeeSafeguard() {
         proxy.pluginManager.registerListener(this, events)
 
         proxy.pluginManager.registerCommand(this, BSGCmd(this))
-        val client = HttpClient(CIO)
         whitelistCommand = ListCommandImpl(
-            this, client,
-            listMgr, whitelist,
-            "whitelist","bungeesafeguard.whitelist",
-            "wlist"
+            this, listMgr,
+            whitelist, "whitelist",
+            "bungeesafeguard.whitelist", "wlist"
         )
         proxy.pluginManager.registerCommand(this, whitelistCommand)
         blacklistCommand = ListCommandImpl(
-            this, client,
-            listMgr, blacklist,
-            "blacklist", "bungeesafeguard.blacklist",
-            "blist"
+            this, listMgr,
+            blacklist, "blacklist",
+            "bungeesafeguard.blacklist", "blist"
         )
         proxy.pluginManager.registerCommand(this, blacklistCommand)
 

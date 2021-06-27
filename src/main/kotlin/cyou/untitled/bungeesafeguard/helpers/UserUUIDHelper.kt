@@ -2,6 +2,7 @@ package cyou.untitled.bungeesafeguard.helpers
 
 import cyou.untitled.bungeesafeguard.BungeeSafeguard
 import io.ktor.client.*
+import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -20,7 +21,9 @@ object UserUUIDHelper {
         val query: String
     )
 
-    private suspend fun getUUIDFromUsername(client: HttpClient, username: String): UUID {
+    val client = HttpClient(CIO)
+
+    private suspend fun getUUIDFromUsername(username: String, client: HttpClient = this.client): UUID {
         val res: HttpResponse = client.get("https://api.mojang.com/users/profiles/minecraft/${username}")
         when (val status = res.status) {
             HttpStatusCode.OK -> {
@@ -41,11 +44,11 @@ object UserUUIDHelper {
         }
     }
 
-    suspend fun getUUIDFromString(client: HttpClient, usernameOrUUID: String): NameAndUUID {
+    suspend fun getUUIDFromString(usernameOrUUID: String, client: HttpClient = this.client): NameAndUUID {
         return try {
             NameAndUUID(null, UUID.fromString(usernameOrUUID))
         } catch (e: IllegalArgumentException) {
-            NameAndUUID(usernameOrUUID, getUUIDFromUsername(client, usernameOrUUID))
+            NameAndUUID(usernameOrUUID, getUUIDFromUsername(usernameOrUUID, client))
         }
     }
 
@@ -57,7 +60,7 @@ object UserUUIDHelper {
         )
     }
 
-    private suspend fun doGetUUIDFromXBOXTag(context: BungeeSafeguard, client: HttpClient, tag: String): UUID {
+    private suspend fun doGetUUIDFromXBOXTag(context: BungeeSafeguard, tag: String, client: HttpClient = this.client): UUID {
         var xblWebAPIUrl = context.config.xblWebAPIUrl ?:
         error("XBL Web API URL must be specified for XUID look up")
         if (!xblWebAPIUrl.endsWith('/')) xblWebAPIUrl += '/'
@@ -72,11 +75,11 @@ object UserUUIDHelper {
         }
     }
 
-    suspend fun getUUIDFromXBOXTag(context: BungeeSafeguard, client: HttpClient, tagOrUUID: String): NameAndUUID {
+    suspend fun getUUIDFromXBOXTag(context: BungeeSafeguard, tagOrUUID: String, client: HttpClient = this.client): NameAndUUID {
         return try {
             NameAndUUID(null, UUID.fromString(tagOrUUID))
         } catch (e: IllegalArgumentException) {
-            NameAndUUID(tagOrUUID, doGetUUIDFromXBOXTag(context, client, tagOrUUID))
+            NameAndUUID(tagOrUUID, doGetUUIDFromXBOXTag(context, tagOrUUID, client))
         }
     }
 
@@ -85,13 +88,13 @@ object UserUUIDHelper {
      *
      * In principle, this method and the `action` should not throw any exception
      */
-    suspend fun resolveUUIDs(context: BungeeSafeguard, client: HttpClient, queries: Array<out String>, xbox: Boolean, action: suspend (ResolutionResult) -> Unit) {
+    suspend fun resolveUUIDs(context: BungeeSafeguard, queries: Array<out String>, xbox: Boolean, client: HttpClient = this.client, action: suspend (ResolutionResult) -> Unit) {
         for (usernameOrUUID in queries) {
             coroutineScope {
                 launch {
                     try {
-                        val res = if (xbox) getUUIDFromXBOXTag(context, client, usernameOrUUID)
-                        else getUUIDFromString(client, usernameOrUUID)
+                        val res = if (xbox) getUUIDFromXBOXTag(context, usernameOrUUID, client)
+                        else getUUIDFromString(usernameOrUUID, client)
                         try {
                             action(ResolutionResult(null, res, usernameOrUUID))
                         } catch (err: Throwable) {

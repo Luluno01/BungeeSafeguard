@@ -6,7 +6,6 @@ import cyou.untitled.bungeesafeguard.helpers.TypedJSON
 import cyou.untitled.bungeesafeguard.helpers.dispatcher
 import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
-import io.ktor.client.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.md_5.bungee.api.ChatColor
@@ -18,10 +17,9 @@ import java.io.IOException
 open class ImportCommand(
     context: BungeeSafeguard,
     name: ListCommand.Companion.SubcommandName,
-    client: HttpClient,
     listMgr: ListManager,
     list: UUIDList
-) : AddCommand(context, name, client, listMgr, list, false) {
+) : AddCommand(context, name, listMgr, list, false) {
     companion object {
         fun loadUUIDsInJSONArray(sender: CommandSender, file: File): Array<String>? {
             val json = try {

@@ -1,36 +1,36 @@
 package cyou.untitled.bungeesafeguard.commands
 
 import cyou.untitled.bungeesafeguard.BungeeSafeguard
-import cyou.untitled.bungeesafeguard.list.ListManager
-import io.ktor.client.*
-import net.md_5.bungee.api.ChatColor
-import net.md_5.bungee.api.CommandSender
-import net.md_5.bungee.api.chat.TextComponent
 import cyou.untitled.bungeesafeguard.Config
 import cyou.untitled.bungeesafeguard.commands.ListCommand.Companion.SubcommandName.*
 import cyou.untitled.bungeesafeguard.commands.subcommands.list.*
+import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
+import net.md_5.bungee.api.ChatColor
+import net.md_5.bungee.api.CommandSender
+import net.md_5.bungee.api.chat.TextComponent
 import java.io.File
 
 open class ListCommandImpl(
     context: BungeeSafeguard,
-    client: HttpClient,
     listMgr: ListManager,
     list: UUIDList,
-    name: String, permission: String, vararg aliases: String):
-    ListCommand(context, client, listMgr, list, name, permission, *aliases) {
+    name: String,
+    permission: String, vararg aliases: String
+):
+    ListCommand(context, listMgr, list, name, permission, *aliases) {
     @Suppress("MemberVisibilityCanBePrivate")
     protected val subcommands: MutableList<Base> = mutableListOf(
-        ImportCommand(context, IMPORT, client, listMgr, list),
-        AddCommand(context, ADD, client, listMgr, list, false),
-        AddCommand(context, X_ADD, client, listMgr, list, true),
-        LazyAddCommand(context, LAZY_ADD, client, listMgr, list),
-        RemoveCommand(context, REMOVE, client, listMgr, list, false),
-        RemoveCommand(context, X_REMOVE, client, listMgr, list, true),
-        LazyRemoveCommand(context, LAZY_REMOVE, client, listMgr, list),
-        OnCommand(context, ON, client, listMgr, list),
-        OffCommand(context, OFF, client, listMgr, list),
-        DumpCommand(context, LIST, client, listMgr, list)
+        ImportCommand(context, IMPORT, listMgr, list),
+        AddCommand(context, ADD, listMgr, list, false),
+        AddCommand(context, X_ADD, listMgr, list, true),
+        LazyAddCommand(context, LAZY_ADD, listMgr, list),
+        RemoveCommand(context, REMOVE, listMgr, list, false),
+        RemoveCommand(context, X_REMOVE, listMgr, list, true),
+        LazyRemoveCommand(context, LAZY_REMOVE, listMgr, list),
+        OnCommand(context, ON, listMgr, list),
+        OffCommand(context, OFF, listMgr, list),
+        DumpCommand(context, LIST, listMgr, list)
     )
     @Suppress("MemberVisibilityCanBePrivate")
     protected val subcommandMap = mutableMapOf<String, Base>()

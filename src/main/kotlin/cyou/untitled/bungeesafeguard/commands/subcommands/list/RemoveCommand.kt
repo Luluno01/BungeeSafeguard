@@ -7,7 +7,6 @@ import cyou.untitled.bungeesafeguard.helpers.UserUUIDHelper
 import cyou.untitled.bungeesafeguard.helpers.dispatcher
 import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
-import io.ktor.client.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.md_5.bungee.api.ChatColor
@@ -17,7 +16,6 @@ import net.md_5.bungee.api.chat.TextComponent
 open class RemoveCommand(
     context: BungeeSafeguard,
     name: ListCommand.Companion.SubcommandName,
-    client: HttpClient,
     listMgr: ListManager,
     list: UUIDList,
     /**
@@ -25,7 +23,7 @@ open class RemoveCommand(
      */
     @Suppress("MemberVisibilityCanBePrivate")
     protected val xbox: Boolean
-) : Base(context, name, client, listMgr, list, true) {
+) : Base(context, name, listMgr, list, true) {
     /**
      * Remove UUID(s) or username(s) from the list
      * @param sender Command sender
@@ -33,7 +31,7 @@ open class RemoveCommand(
      * @param xbox Whether the names in `args` are XBOX tags
      */
     open suspend fun remove(sender: CommandSender, args: Array<out String>, xbox: Boolean) {
-        UserUUIDHelper.resolveUUIDs(context, client, args, xbox) {
+        UserUUIDHelper.resolveUUIDs(context, args, xbox) {
             when (val err = it.err) {
                 null -> {
                     val nameAndUUID = it.result!!

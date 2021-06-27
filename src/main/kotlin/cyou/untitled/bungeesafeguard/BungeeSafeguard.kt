@@ -1,6 +1,6 @@
 package cyou.untitled.bungeesafeguard
 
-import cyou.untitled.bungeesafeguard.commands.ListCommandImpl
+import cyou.untitled.bungeesafeguard.commands.ListCommand
 import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
 import net.md_5.bungee.api.plugin.Plugin
@@ -64,10 +64,10 @@ abstract class BungeeSafeguard: Plugin() {
     /**
      * The whitelist command
      */
-    abstract val whitelistCommand: ListCommandImpl
+    abstract val whitelistCommand: ListCommand
 
     /**
      * The blacklist command
      */
-    abstract val blacklistCommand: ListCommandImpl
+    abstract val blacklistCommand: ListCommand
 }

@@ -4,7 +4,6 @@ import cyou.untitled.bungeesafeguard.BungeeSafeguard
 import cyou.untitled.bungeesafeguard.commands.ListCommand
 import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
-import io.ktor.client.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.md_5.bungee.api.ChatColor
@@ -15,10 +14,9 @@ import java.util.*
 open class OffCommand(
     context: BungeeSafeguard,
     name: ListCommand.Companion.SubcommandName,
-    client: HttpClient,
     listMgr: ListManager,
     list: UUIDList
-) : Base(context, name, client, listMgr, list, false) {
+) : Base(context, name, listMgr, list, false) {
     /**
      * Turn off the list
      * @param sender Command sender

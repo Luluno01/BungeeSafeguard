@@ -4,11 +4,9 @@ import cyou.untitled.bungeesafeguard.BungeeSafeguard
 import cyou.untitled.bungeesafeguard.commands.subcommands.list.Base
 import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
-import io.ktor.client.*
 
 abstract class ListCommand(
     val context: BungeeSafeguard,
-    protected val client: HttpClient,
     protected val listMgr: ListManager,
     protected val list: UUIDList,
     name: String, permission: String, vararg aliases: String) : ConfirmCommand(

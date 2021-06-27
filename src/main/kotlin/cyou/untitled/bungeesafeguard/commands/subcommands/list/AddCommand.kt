@@ -17,7 +17,6 @@ import net.md_5.bungee.api.chat.TextComponent
 open class AddCommand(
     context: BungeeSafeguard,
     name: ListCommand.Companion.SubcommandName,
-    client: HttpClient,
     listMgr: ListManager,
     list: UUIDList,
     /**
@@ -25,7 +24,7 @@ open class AddCommand(
      */
     @Suppress("MemberVisibilityCanBePrivate")
     protected val xbox: Boolean
-) : Base(context, name, client, listMgr, list, true) {
+) : Base(context, name, listMgr, list, true) {
     /**
      * Add UUID(s) or username(s) to the main list
      * @param sender Command sender
@@ -33,7 +32,7 @@ open class AddCommand(
      * @param xbox Whether the names in `args` are XBOX tags
      */
     open suspend fun add(sender: CommandSender, args: Array<out String>, xbox: Boolean) {
-        UserUUIDHelper.resolveUUIDs(context, client, args, xbox) {
+        UserUUIDHelper.resolveUUIDs(context, args, xbox) {
             when (val err = it.err) {
                 null -> {
                     val nameAndUUID = it.result!!
