@@ -59,7 +59,7 @@ Or
 ```Kotlin
 import net.md_5.bungee.api.plugin.Listener
 import cyou.untitled.bungeesafeguard.BungeeSafeguard
-import cyou.untitled.bungeesafeguard.BungeeSafeguardEnabledEvent
+import cyou.untitled.bungeesafeguard.events.BungeeSafeguardEnabledEvent
 import net.md_5.bungee.event.EventHandler
 
 class Events(private val context: Plugin): Listener {

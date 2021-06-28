@@ -1,5 +1,6 @@
-package cyou.untitled.bungeesafeguard
+package cyou.untitled.bungeesafeguard.events
 
+import cyou.untitled.bungeesafeguard.BungeeSafeguard
 import net.md_5.bungee.api.plugin.Event
 
 /**

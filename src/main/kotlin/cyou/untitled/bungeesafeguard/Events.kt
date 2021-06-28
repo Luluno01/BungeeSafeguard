@@ -14,7 +14,7 @@ import kotlinx.coroutines.*
 import java.util.*
 
 @Suppress("MemberVisibilityCanBePrivate")
-open class Events(val context: BungeeSafeguardImpl): Listener {
+open class Events(val context: BungeeSafeguard): Listener {
     protected val config: Config
         get() = context.config
     protected val userCache: UserCache

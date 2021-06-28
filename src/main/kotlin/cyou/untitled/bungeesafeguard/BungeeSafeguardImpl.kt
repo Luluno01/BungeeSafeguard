@@ -1,6 +1,7 @@
 package cyou.untitled.bungeesafeguard
 
 import cyou.untitled.bungeesafeguard.commands.ListCommandImpl
+import cyou.untitled.bungeesafeguard.events.BungeeSafeguardEnabledEvent
 import cyou.untitled.bungeesafeguard.helpers.ListChecker
 import cyou.untitled.bungeesafeguard.helpers.dispatcher
 import cyou.untitled.bungeesafeguard.list.ListManager
