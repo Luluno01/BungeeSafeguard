@@ -70,4 +70,9 @@ abstract class BungeeSafeguard: Plugin() {
      * The blacklist command
      */
     abstract val blacklistCommand: ListCommand
+
+    /**
+     * If the plugin is enabled
+     */
+    abstract val enabled: Boolean
 }

@@ -25,6 +25,8 @@ class BungeeSafeguardImpl: BungeeSafeguard() {
     override lateinit var blacklist: UUIDList
     override lateinit var whitelistCommand: ListCommandImpl
     override lateinit var blacklistCommand: ListCommandImpl
+    override var enabled: Boolean = false
+        private set
 
     override fun onEnable() {
         runBlocking(dispatcher) {
@@ -94,6 +96,8 @@ class BungeeSafeguardImpl: BungeeSafeguard() {
 
         exposeInst()
         logger.info("${ChatColor.GREEN}BungeeSafeguard enabled")
+        enabled = true
+        proxy.pluginManager.callEvent(BungeeSafeguardEnabledEvent(this))
     }
 
     override fun onDisable() {
@@ -134,6 +138,7 @@ class BungeeSafeguardImpl: BungeeSafeguard() {
             val backend = Backend.getBackend()
             logger.info("Closing backend $backend")
             backend.close(null)
+            logger.info("Backend $backend closed")
         }
     }
 }
