@@ -137,9 +137,10 @@ class BungeeSafeguardImpl: BungeeSafeguard() {
         }
         runBlocking /* No more asynchronous tasks will be executed */ {
             val backend = Backend.getBackend()
-            logger.info("Closing backend $backend")
+            val backendDesc = backend.toString()
+            logger.info("Closing backend $backendDesc")
             backend.close(null)
-            logger.info("Backend $backend closed")
+            logger.info("Backend $backendDesc closed")
         }
     }
 }

@@ -4,7 +4,7 @@ A blacklist and whitelist BungeeCord plugin with support of UUID look up.
 
 This plugin was formerly named BungeeGuard. In order not to conflict with the existing plugin BungeeGuard, this plugin is renamed to BungeeSafeguard from v2.0.
 
-Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.17-R0.1-SNAPSHOT:436f47f:437`.
+Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.17-R0.1-SNAPSHOT:93773f9:448`.
 
 - [BungeeSafeguard](#bungeesafeguard)
   - [Features](#features)
@@ -59,7 +59,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.17-R0.1-SNAPSHOT:436f47
 * Switch between multiple configuration files (e.g., a config for maintenance mode which whitelists administrators only; from v2.4)
 * Optional confirmation before adding or removing list entries (from v2.4, see [Operation Confirmation](#operation-confirmation) for more details)
 * Import from old `whitelist.json` or `banned-players.json` (from v2.5, resolves issue #7; see [whitelist import](#whitelist-import) and [blacklist import](#blacklist-import) for more details)
-* API support backed by (possibly) well structured and documented code base (from v3.0; see [Developing Extension Plugin for BungeeSafeguard](./developer.md) for more details)
+* API support backed by (possibly) well-structured and documented code base (from v3.0; see [Developing Extension Plugin for BungeeSafeguard](./developer.md) for more details)
   * Manage the lists via a GUI Web interface (TODO)
   * SQL database storage support (TODO)
   * Redis storage support (TODO)
@@ -83,7 +83,7 @@ For **normal users**, we have the followings:
 * [Replaceable Storage Backend for Lists](#replaceable-storage-backend-for-lists)
 * [Optional Extension Plugins](#optional-extension-plugins)
 
-For **developers** who **want to interact with BungeeSafeguard** in a graceful manner, please refer to [Developing Extension Plugin for BungeeSafeguard](./developer.md).
+For **developers** who **want to interact with BungeeSafeguard** gracefully, please refer to [Developing Extension Plugin for BungeeSafeguard](./developer.md).
 
 ## Migrate to v2.0
 
@@ -124,7 +124,11 @@ TODO: some implementations available
 Start from v3.0, BungeeSafeguard exposes a handful of APIs for third-party plugins to manipulate the lists or register custom backend.
 For example, you can now implement a standalone plugin that programmatically whitelist or blacklist someone; or a plugin that wraps BungeeSafeguard APIs and exposes them as RESTful API.
 
-TODO: some implementations available
+Current available extension plugins:
+
+| Name | Feature |
+| ---- | ------- |
+| [RESTful-BSG](https://github.com/Luluno01/RESTful-BSG) | Access the whitelist/blacklist via RESTful API |
 
 ## Configuration
 

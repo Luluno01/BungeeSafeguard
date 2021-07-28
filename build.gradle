@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.5.10'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.20'
     id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
@@ -21,6 +21,13 @@ sourceSets {
 }
 
 shadowJar {
+    // Library loading is delegated to BungeeCord
+    dependencies {
+        exclude(dependency('org.jetbrains.kotlin.*:.*:.*'))
+        exclude(dependency('io.ktor.*:.*:.*'))
+        exclude(dependency('com.google.code.gson:gson:.*'))
+    }
+
     archiveBaseName.set('BungeeSafeguard')
     archiveVersion.set(project.version as String)
     zip64 true
@@ -28,13 +35,13 @@ shadowJar {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib"
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0'
-    implementation 'com.google.code.gson:gson:2.8.7'
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib"
+    compileOnly 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1'
+    compileOnly 'com.google.code.gson:gson:2.8.7'  // Included in BungeeCord
     compileOnly "net.md-5:bungeecord-api:1.17-R0.1-SNAPSHOT"
-    implementation 'io.ktor:ktor-client-core:1.6.0'
-    implementation 'io.ktor:ktor-client-cio:1.6.0'
-    implementation 'org.bstats:bstats-bungeecord:2.2.1'
+    compileOnly 'io.ktor:ktor-client-core:1.6.0'
+    compileOnly 'io.ktor:ktor-client-cio:1.6.0'
+    implementation 'org.bstats:bstats-bungeecord:2.2.1'  // Shaded
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
