@@ -5,6 +5,16 @@ Start from v3.0, BungeeSafeguard officially announced its Java/Kotlin APIs (I wi
 * Lists manipulation
 * Custom storage backend for lists
 
+- [Developing Extension Plugin for BungeeSafeguard](#developing-extension-plugin-for-bungeesafeguard)
+  - [Get Started](#get-started)
+    - [Add BungeeSafeguard as a Dependency](#add-bungeesafeguard-as-a-dependency)
+    - [Library Collision Workaround](#library-collision-workaround)
+    - [Get the Plugin Instance](#get-the-plugin-instance)
+    - [Get the Storage Backend](#get-the-storage-backend)
+    - [Register Custom Storage Backend](#register-custom-storage-backend)
+  - [Lists Manipulation](#lists-manipulation)
+  - [Storage Backend](#storage-backend)
+
 ## Get Started
 
 *Note: this section assumes you have mastered the basics of Kotlin/Java developing, including the usage of a proper IDE and build tools*.
@@ -31,6 +41,20 @@ dependencies {
 ```
 
 Remember to declare BungeeSafeguard as a hard dependency in your `plugin.yml`.
+
+### Library Collision Workaround
+
+Your extension plugin has to share the same Kotlin runtime and other transitive dependencies with BungeeSafeguard, otherwise a `java.lang.LinkageError: loader constraint violation` exception will occur (see [this issue](https://github.com/SpigotMC/BungeeCord/issues/3139)).
+
+To fix this problem, call `DependencyFixer.fixLibraryLoader` before interacting with BungeeSafeguard:
+
+```Kotlin
+import cyou.untitled.bungeesafeguard.helpers.DependencyFixer
+
+// ...
+DependencyFixer.fixLibraryLoader(YourPlugin::class.java.classLoader)
+// ...
+```
 
 ### Get the Plugin Instance
 
