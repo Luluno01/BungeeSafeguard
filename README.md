@@ -45,6 +45,9 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.17-R0.1-SNAPSHOT:93773f
       - [bungeesafeguard reload](#bungeesafeguard-reload)
       - [bungeesafeguard status](#bungeesafeguard-status)
       - [bungeesafeguard dump](#bungeesafeguard-dump)
+      - [bungeesafeguard import](#bungeesafeguard-import)
+      - [bungeesafeguard merge](#bungeesafeguard-merge)
+      - [bungeesafeguard export](#bungeesafeguard-export)
   - [Permission Nodes](#permission-nodes)
   - [Lazy Lists](#lazy-lists)
   - [Operation Confirmation](#operation-confirmation)
@@ -574,6 +577,58 @@ Dump currently loaded blacklist and whitelist:
 bungeesafeguard dump
 ```
 
+#### bungeesafeguard import
+
+Alias: `bsg i`.
+
+Import all whitelist/blacklist records, including both UUID records and lazy records, from a YAML file:
+
+```
+bungeesafeguard import <config-file-name>
+```
+
+Example:
+
+```
+bungeesafeguard import old-config.yml
+```
+
+Note this command will refuse to overwrite/merge current lists if current storage backend is non-empty. For list merging, use [`bungeesafeguard merge`](#bungeesafeguard-merge)
+
+#### bungeesafeguard merge
+
+Alias: `bsg m`.
+
+Merge all whitelist/blacklist records, including both UUID records and lazy records, in a YAML file, with current lists in use:
+
+```
+bungeesafeguard merge <config-file-name>
+```
+
+Example:
+
+```
+bungeesafeguard merge old-config.yml
+```
+
+#### bungeesafeguard export
+
+Alias: `bsg e`.
+
+Export all whitelist/blacklist records, including both UUID records and lazy records, to a YAML file:
+
+```
+bungeesafeguard export <lists.yml>
+```
+
+Example:
+
+```
+bungeesafeguard export list-backup.yml
+```
+
+You can combine this command with [`bungeesafeguard import`](#bungeesafeguard-import) for backend migration.
+
 ## Permission Nodes
 
 BungeeSafeGuard uses BungeeCord's built-in permission system. There are 3 permission nodes for the aforementioned 3 category of commands respectively. Only players granted **with** the permission can issue corresponding command **in game** (this restriction does not apply to console).
@@ -582,7 +637,7 @@ BungeeSafeGuard uses BungeeCord's built-in permission system. There are 3 permis
 | --------------------------- | ------------- |
 | `bungeesafeguard.whitelist` | [`whitelist *`](#whitelist) |
 | `bungeesafeguard.blacklist` | [`blacklist *`](#blacklist) |
-| `bungeesafeguard.main`      | [`bungeesafeguard *`](#bungeesafeguard) |
+| `bungeesafeguard.main`      | [`bungeesafeguard *`](#main-command) |
 
 Note that despite that BungeeCord has a built-in permission system, it does not provide a permission manager (or does it?). You will need to install third-party permission plugin so that you can grant permissions to players.
 
