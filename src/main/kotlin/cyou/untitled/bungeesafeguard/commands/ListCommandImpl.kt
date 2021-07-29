@@ -105,11 +105,12 @@ open class ListCommandImpl(
     }
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
-        if (args.getOrNull(0) == "confirm") {
+        val fixedArgs = args.omitEmpty()
+        if (fixedArgs.getOrNull(0) == "confirm") {
             onConfirm(sender)
         } else {
-            val cmd = cmdReg.getSubcommand(sender, args) as Base? ?: return
-            val parsed = cmd.parseArgs(sender, args) ?: return Usage(name).sendUsage(sender)
+            val cmd = cmdReg.getSubcommand(sender, fixedArgs) as Base? ?: return
+            val parsed = cmd.parseArgs(sender, fixedArgs) ?: return Usage(name).sendUsage(sender)
             possiblyDoAfterConfirmation(sender, cmd, parsed)
         }
     }

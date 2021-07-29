@@ -2,6 +2,7 @@ package cyou.untitled.bungeesafeguard.commands
 
 import cyou.untitled.bungeesafeguard.BungeeSafeguardImpl
 import cyou.untitled.bungeesafeguard.commands.subcommands.SubcommandRegistry
+import cyou.untitled.bungeesafeguard.commands.subcommands.list.omitEmpty
 import cyou.untitled.bungeesafeguard.commands.subcommands.main.*
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.CommandSender
@@ -40,6 +41,7 @@ open class BungeeSafeguard(val context: BungeeSafeguardImpl): Command("bungeesaf
     }
 
     override fun execute(sender: CommandSender, args: Array<out String>) {
-        cmdReg.getSubcommand(sender, args)?.execute(sender, args.sliceArray(IntRange(1, args.size - 1)))
+        val fixedArgs = args.omitEmpty()
+        cmdReg.getSubcommand(sender, fixedArgs)?.execute(sender, args.sliceArray(IntRange(1, fixedArgs.size - 1)))
     }
 }
