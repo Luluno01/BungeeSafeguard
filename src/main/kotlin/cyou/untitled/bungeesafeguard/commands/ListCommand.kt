@@ -40,18 +40,4 @@ abstract class ListCommand(
             override fun toString(): String = cmdName
         }
     }
-
-    /**
-     * Get the instance of a subcommand by name
-     *
-     * @param name the name of the subcommand
-     */
-    abstract fun getSubcommand(name: SubcommandName): Base?
-
-    /**
-     * Get the instance of a subcommand by name
-     *
-     * @param name the name of the subcommand
-     */
-    abstract fun getSubcommand(name: String): Base?
 }

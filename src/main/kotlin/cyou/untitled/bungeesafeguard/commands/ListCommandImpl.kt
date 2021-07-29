@@ -3,6 +3,7 @@ package cyou.untitled.bungeesafeguard.commands
 import cyou.untitled.bungeesafeguard.BungeeSafeguard
 import cyou.untitled.bungeesafeguard.Config
 import cyou.untitled.bungeesafeguard.commands.ListCommand.Companion.SubcommandName.*
+import cyou.untitled.bungeesafeguard.commands.subcommands.SubcommandRegistry
 import cyou.untitled.bungeesafeguard.commands.subcommands.list.*
 import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
@@ -19,30 +20,35 @@ open class ListCommandImpl(
     permission: String, vararg aliases: String
 ):
     ListCommand(context, listMgr, list, name, permission, *aliases) {
-    @Suppress("MemberVisibilityCanBePrivate")
-    protected val subcommands: MutableList<Base> = mutableListOf(
-        ImportCommand(context, IMPORT, listMgr, list),
-        AddCommand(context, ADD, listMgr, list, false),
-        AddCommand(context, X_ADD, listMgr, list, true),
-        LazyAddCommand(context, LAZY_ADD, listMgr, list),
-        RemoveCommand(context, REMOVE, listMgr, list, false),
-        RemoveCommand(context, X_REMOVE, listMgr, list, true),
-        LazyRemoveCommand(context, LAZY_REMOVE, listMgr, list),
-        OnCommand(context, ON, listMgr, list),
-        OffCommand(context, OFF, listMgr, list),
-        DumpCommand(context, LIST, listMgr, list)
-    )
-    @Suppress("MemberVisibilityCanBePrivate")
-    protected val subcommandMap = mutableMapOf<String, Base>()
-    init {
-        for (subcommand in subcommands) {
-            assert(!subcommandMap.containsKey(subcommand.name)) { "Conflicting subcommand name ${subcommand.name}" }
-            subcommandMap[subcommand.name] = subcommand
-            for (alias in subcommand.aliases) {
-                assert(!subcommandMap.containsKey(alias)) { "Conflicting subcommand alias/name $alias" }
-                subcommandMap[alias] = subcommand
+    companion object {
+        open class Usage(val name: String): SubcommandRegistry.Companion.UsageSender {
+            override fun sendUsage(sender: CommandSender) {
+                sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
+                sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /$name import <path to whitelist.json or banned-players.json>"))
+                sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For normal Mojang players: /$name <add/remove/rm> <player ...>"))
+                sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For XBOX Live players: /$name <x-add/xadd/x-remove/x-remove/x-rm/xrm> <player ...>"))
+                sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For both Mojang and XBOX players: /$name <lazy-add/lazy-remove/lazyadd/ladd/lazyremove/lremove/lrm> <player ...>"))
+                sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /$name <on/off>"))
+                sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /$name <list/ls/show/dump>"))
             }
         }
+    }
+    @Suppress("MemberVisibilityCanBePrivate")
+    protected val cmdReg = SubcommandRegistry(context, Usage(name))
+
+    init {
+        cmdReg.registerSubcommand(
+            ImportCommand(context, IMPORT, listMgr, list),
+            AddCommand(context, ADD, listMgr, list, false),
+            AddCommand(context, X_ADD, listMgr, list, true),
+            LazyAddCommand(context, LAZY_ADD, listMgr, list),
+            RemoveCommand(context, REMOVE, listMgr, list, false),
+            RemoveCommand(context, X_REMOVE, listMgr, list, true),
+            LazyRemoveCommand(context, LAZY_REMOVE, listMgr, list),
+            OnCommand(context, ON, listMgr, list),
+            OffCommand(context, OFF, listMgr, list),
+            DumpCommand(context, LIST, listMgr, list)
+        )
     }
 
     protected open val config: Config
@@ -56,20 +62,6 @@ open class ListCommandImpl(
 
     protected open val lazyName: String
         get() = list.lazyName
-
-    /**
-     * Send usage to a command sender
-     * @param sender Command sender
-     */
-    open fun sendUsage(sender: CommandSender) {
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}Usage:"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /$name import <path to whitelist.json or banned-players.json>"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For normal Mojang players: /$name <add/remove/rm> <player ...>"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For XBOX Live players: /$name <x-add/xadd/x-remove/x-remove/x-rm/xrm> <player ...>"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  For both Mojang and XBOX players: /$name <lazy-add/lazy-remove/lazyadd/ladd/lazyremove/lremove/lrm> <player ...>"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /$name <on/off>"))
-        sender.sendMessage(TextComponent("${ChatColor.YELLOW}  /$name <list/ls/show/dump>"))
-    }
 
     /**
      * Send confirm message to the command sender
@@ -112,27 +104,13 @@ open class ListCommandImpl(
         }
     }
 
-    override fun getSubcommand(name: Companion.SubcommandName): Base? = subcommandMap[name.cmdName]
-    override fun getSubcommand(name: String): Base? = subcommandMap[name]
-
     override fun execute(sender: CommandSender, args: Array<out String>) {
-        if (args.isEmpty()) {
-            sendUsage(sender)
+        if (args.getOrNull(0) == "confirm") {
+            onConfirm(sender)
         } else {
-            val subcommandString = args[0]
-            if (subcommandString == "confirm") {
-                onConfirm(sender)
-                return
-            }
-            val subcommand = subcommandMap[subcommandString]
-            if (subcommand == null) {
-                sendUsage(sender)
-                return
-            }
-            when (val parsed = subcommand.parseArgs(sender, args)) {
-                null -> sendUsage(sender)
-                else -> possiblyDoAfterConfirmation(sender, subcommand, parsed)
-            }
+            val cmd = cmdReg.getSubcommand(sender, args) as Base? ?: return
+            val parsed = cmd.parseArgs(sender, args) ?: return Usage(name).sendUsage(sender)
+            possiblyDoAfterConfirmation(sender, cmd, parsed)
         }
     }
 }

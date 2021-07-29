@@ -141,12 +141,12 @@ The configuration file for BungeeSafeguard is `plugins/BungeeSafeguard/config.ym
 ```yaml
 #########################################
 #     BungeeSafeguard Configuration     #
-#            Version: 3.0               #
+#            Version: 3.1               #
 #          Author: Untitled             #
 #########################################
 
 # You can safely ignore this
-version: "3.0"
+version: "3.1"
 
 # Message to be sent to the player when that player is blocked for not being whitelisted
 whitelist-message: :( You are not whitelisted on this server

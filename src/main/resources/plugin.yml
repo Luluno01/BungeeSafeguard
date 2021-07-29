@@ -1,6 +1,6 @@
 name: BungeeSafeguard
 main: cyou.untitled.bungeesafeguard.BungeeSafeguardImpl
-version: "3.0"
+version: "3.1"
 author: Untitled
 libraries:
   - org.jetbrains.kotlin:kotlin-stdlib:1.5.20
