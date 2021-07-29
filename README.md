@@ -65,7 +65,7 @@ Tested on Waterfall, version: `git:Waterfall-Bootstrap:1.17-R0.1-SNAPSHOT:93773f
 * API support backed by (possibly) well-structured and documented code base (from v3.0; see [Developing Extension Plugin for BungeeSafeguard](./developer.md) for more details)
   * Manage the lists via a GUI Web interface (TODO)
   * SQL database storage support (TODO)
-  * Redis storage support (TODO)
+  * Redis storage support ([Redis-BSG](https://github.com/Luluno01/Redis-BSG))
 
 ## Usage
 
