@@ -19,7 +19,7 @@ import java.util.*
  * (i.e., the legacy format in older versions)
  */
 @Suppress("BlockingMethodInNonBlockingContext", "MemberVisibilityCanBePrivate")
-open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context) {
+open class YAMLBackend(context: Plugin, initFile: File): Backend(context) {
     companion object {
         /* YAML entries */
         const val WHITELIST = "whitelist"
@@ -48,8 +48,8 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
         protected val yamlConfigProvider = ConfigurationProvider.getProvider(YamlConfiguration::class.java)!!
     }
 
-    @Suppress("PropertyName")
-    var file: File? = initFile
+    protected var initialized = false
+    var file: File = initFile
         protected set
 
     val name = "YAMLBackend-$id"
@@ -58,12 +58,13 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
 
     open suspend fun init(file: File, commandSender: CommandSender?) {
         lock.withLock {
-            assert(this.file == null) { "Concurrent initialization, or reinitialize without first closing" }
+            assert(!initialized) { "Reinitialize without first closing" }
             this.file = file
             FileManager.withFile(file.path, name) {
                 // If it does not throw, assume the file is OK
                 yamlConfigProvider.load(it)
             }
+            initialized = true
             commandSender?.sendMessage(TextComponent("${ChatColor.GREEN}YAMLBackend is using \"${file.path}\" as the underlying storage file"))
         }
         // Sanity check
@@ -75,14 +76,26 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
         ListChecker.checkLists(bsg, null, listMgr, { get(it.path) }, { it.name })
     }
 
+    /**
+     * Init without logging and checking
+     */
+    open suspend fun init(file: File = this.file) {
+        lock.withLock {
+            assert(!initialized) { "Reinitialize without first closing" }
+            FileManager.withFile(file.path, name) {
+                // If it does not throw, assume the file is OK
+                yamlConfigProvider.load(it)
+            }
+        }
+    }
+
     override suspend fun init(commandSender: CommandSender?) {
-        val file = file ?: error("This backend was not provided with the underlying file when initialized")
         init(file, commandSender)
     }
 
     override suspend fun close(commandSender: CommandSender?) {
         lock.withLock {
-            file = null
+            initialized = false
         }
     }
 
@@ -96,21 +109,21 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
         lock.withLock {
             // First make sure the path is valid
             val entry = translatePath(path)
-            return FileManager.withFile(file!!.path, name) { block(entry, it) }
+            return FileManager.withFile(file.path, name) { block(entry, it) }
         }
     }
 
     protected suspend fun <T>withEntryAndConfigFile(path: Array<String>, block: suspend (String, Configuration) -> T): T {
         return withEntryAndFile(path) { entry, _ ->
-            val conf = yamlConfigProvider.load(file!!)
+            val conf = yamlConfigProvider.load(file)
             return@withEntryAndFile block(entry, conf)
         }
     }
 
     protected suspend fun <T>withConfigFile(block: suspend (Configuration) -> T): T {
         lock.withLock {
-            return FileManager.withFile(file!!.path, name) {
-                val conf = yamlConfigProvider.load(file!!)
+            return FileManager.withFile(file.path, name) {
+                val conf = yamlConfigProvider.load(file)
                 return@withFile block(conf)
             }
         }
@@ -121,7 +134,7 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
             val records = conf.getStringList(entry).toMutableSet()
             if (records.add(rawRecord)) {
                 conf.set(entry, records.toTypedArray())
-                yamlConfigProvider.save(conf, file!!)
+                yamlConfigProvider.save(conf, file)
                 true
             } else {
                 false
@@ -134,7 +147,7 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
             val records = conf.getStringList(entry).toMutableSet()
             if (records.remove(rawRecord)) {
                 conf.set(entry, records.toTypedArray())
-                yamlConfigProvider.save(conf, file!!)
+                yamlConfigProvider.save(conf, file)
                 true
             } else {
                 false
@@ -173,7 +186,7 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
                 val mainRecords = it.getStringList(mainEntry).toMutableSet()
                 mainRecords.add(id.toString())
                 it.set(mainEntry, mainRecords.toTypedArray())
-                yamlConfigProvider.save(it, file!!)
+                yamlConfigProvider.save(it, file)
                 true
             } else {
                 false
@@ -185,5 +198,5 @@ open class YAMLBackend(context: Plugin, initFile: File? = null): Backend(context
         // Do nothing
     }
 
-    override fun toString(): String = "YAMLBackend(\"${file?.path ?: "<null>"}\")"
+    override fun toString(): String = "YAMLBackend(\"${file.path}\")"
 }

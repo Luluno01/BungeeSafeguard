@@ -2,7 +2,7 @@ package cyou.untitled.bungeesafeguard.commands.subcommands.list
 
 import cyou.untitled.bungeesafeguard.BungeeSafeguard
 import cyou.untitled.bungeesafeguard.commands.ListCommand
-import cyou.untitled.bungeesafeguard.commands.subcommands.Subcommand
+import cyou.untitled.bungeesafeguard.commands.subcommands.BSGSubcommand
 import cyou.untitled.bungeesafeguard.list.ListManager
 import cyou.untitled.bungeesafeguard.list.UUIDList
 import cyou.untitled.bungeesafeguard.list.joinLazyListName
@@ -18,7 +18,7 @@ abstract class Base(
     protected val listMgr: ListManager,
     protected val list: UUIDList,
     val confirmable: Boolean = true
-) : Subcommand(context, name.cmdName, *name.aliases) {
+) : BSGSubcommand(context, name.cmdName, *name.aliases) {
     /**
      * Name of this list
      */
